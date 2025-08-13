@@ -1,0 +1,216 @@
+@model IEnumerable<TaskManagementMvc.Models.EmailTemplate>
+
+@{
+    ViewData["Title"] = "قالب‌های ایمیل";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-dark">
+                <i class="bi bi-envelope me-2 text-primary"></i>
+                قالب‌های ایمیل
+            </h1>
+            <p class="text-muted small mb-0">مدیریت قالب‌های ارسال ایمیل</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i>قالب جدید
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-envelope display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">هیچ قالب ایمیلی وجود ندارد</h4>
+            <p class="text-muted">برای شروع، یک قالب ایمیل جدید ایجاد کنید.</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>ایجاد قالب جدید
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var template in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 @(template.IsActive ? "border-success" : "border-secondary")">
+                        <div class="card-header @(template.IsActive ? "bg-success bg-opacity-10 border-success" : "bg-light border-secondary")">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="card-title mb-1 fw-semibold text-dark">@template.Name</h6>
+                                <div class="form-check form-switch">
+                                    <form asp-action="ToggleActive" method="post" style="display: inline;">
+                                        <input type="hidden" name="id" value="@template.Id" />
+                                        <input class="form-check-input" type="checkbox" 
+                                               @(template.IsActive ? "checked" : "") 
+                                               onchange="this.form.submit()" 
+                                               title="@(template.IsActive ? "غیرفعال کردن" : "فعال کردن")">
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted small mb-3">
+                                @(template.Description?.Length > 100 ? template.Description.Substring(0, 100) + "..." : template.Description ?? "بدون توضیحات")
+                            </p>
+                            
+                            <div class="template-info mb-3">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12">
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-tag me-1"></i>
+                                            <strong>موضوع:</strong> @template.Subject
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            ایجاد: @template.CreatedAt.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR"))
+                                        </small>
+                                    </div>
+                                    @if (template.UpdatedAt.HasValue)
+                                    {
+                                        <div class="col-6">
+                                            <small class="text-muted d-block">
+                                                <i class="bi bi-pencil me-1"></i>
+                                                ویرایش: @template.UpdatedAt.Value.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR"))
+                                            </small>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(template.AvailableVariables))
+                            {
+                                <div class="variables-info mb-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-code me-1"></i>
+                                        <strong>متغیرهای قابل استفاده:</strong>
+                                    </small>
+                                    <div class="mt-1">
+                                        @foreach (var variable in template.AvailableVariables.Split(','))
+                                        {
+                                            <span class="badge bg-info bg-opacity-75 text-white small me-1">@variable.Trim()</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a asp-action="Edit" asp-route-id="@template.Id" class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-pencil me-1"></i>ویرایش
+                                    </a>
+                                    <button type="button" class="btn btn-outline-info btn-sm" 
+                                            onclick="previewTemplate('@template.Subject', '@Html.Raw(template.Body)')">
+                                        <i class="bi bi-eye me-1"></i>پیش‌نمایش
+                                    </button>
+                                </div>
+                                <form asp-action="Delete" method="post" style="display: inline;" 
+                                      onsubmit="return confirm('آیا مطمئن هستید که می‌خواهید این قالب را حذف کنید؟')">
+                                    <input type="hidden" name="id" value="@template.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash me-1"></i>حذف
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">پیش‌نمایش قالب ایمیل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">موضوع:</label>
+                    <div id="previewSubject" class="p-2 bg-light rounded"></div>
+                </div>
+                <div>
+                    <label class="form-label fw-semibold">متن:</label>
+                    <div id="previewBody" class="p-3 bg-light rounded" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewTemplate(subject, body) {
+    document.getElementById('previewSubject').textContent = subject;
+    document.getElementById('previewBody').innerHTML = body;
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+</script>
+
+<style>
+.card {
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.text-muted {
+    font-size: 0.8rem;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.card-text {
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.template-info, .variables-info {
+    background-color: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.form-check-input {
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+</style>

@@ -1,0 +1,24 @@
+@model TaskManagementMvc.Models.Company
+
+<div class="container">
+    <h2>شرکت من: @Model.Name</h2>
+    <p>@Model.Description</p>
+
+    <h4 class="mt-4">پروژه‌ها</h4>
+    <ul>
+        @foreach (var p in Model.Projects)
+        {
+            <li><a asp-controller="Projects" asp-action="Details" asp-route-id="@p.Id">@p.Name</a></li>
+        }
+    </ul>
+
+    <h4 class="mt-4">کاربران</h4>
+    <ul>
+        @foreach (var u in Model.Users)
+        {
+            <li>@u.FullName (@u.UserName)</li>
+        }
+    </ul>
+</div>
+
+

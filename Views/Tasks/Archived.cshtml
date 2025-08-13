@@ -1,0 +1,160 @@
+@model IEnumerable<TaskManagementMvc.Models.TaskItem>
+@using TaskManagementMvc.Models
+
+@{
+    ViewData["Title"] = "تسک‌های آرشیو شده";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-dark">
+                <i class="bi bi-archive me-2 text-secondary"></i>
+                تسک‌های آرشیو شده
+            </h1>
+            <p class="text-muted small mb-0">تسک‌های آرشیو شده - قابل بازیابی</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>بازگشت به بورد
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-archive display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">هیچ تسک آرشیو شده‌ای وجود ندارد</h4>
+            <p class="text-muted">تسک‌های آرشیو شده در اینجا نمایش داده می‌شوند.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var task in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100 border-secondary">
+                        <div class="card-header bg-light border-secondary">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="card-title mb-1 small fw-semibold text-dark">@task.Title</h6>
+                                <span class="badge bg-secondary">@task.Status</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted small mb-3">
+                                @(task.Description?.Length > 100 ? task.Description.Substring(0, 100) + "..." : task.Description)
+                            </p>
+                            
+                            <div class="task-meta mb-3">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <span class="badge bg-primary bg-opacity-75 text-white small">@task.Hours ساعت</span>
+                                    </div>
+                                    @if (task.OriginalEstimateHours.HasValue)
+                                    {
+                                        <div class="col-6">
+                                            <span class="badge bg-info bg-opacity-75 text-white small">تخمین: @task.OriginalEstimateHours ساعت</span>
+                                        </div>
+                                    }
+                                </div>
+                                
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-calendar3 me-1"></i>
+                                            @(task.StartAt?.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-person me-1"></i>
+                                            @(task.Performer?.Name ?? "تخصیص داده نشده")
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="archive-info mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-archive me-1"></i>
+                                    آرشیو شده در: @(task.ArchivedAt?.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                </small>
+                                @if (!string.IsNullOrEmpty(task.ArchivedBy))
+                                {
+                                    <br />
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>
+                                        توسط: @task.ArchivedBy
+                                    </small>
+                                }
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light border-secondary">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-outline-info btn-sm">
+                                        <i class="bi bi-eye me-1"></i>جزئیات
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-pencil me-1"></i>ویرایش
+                                    </a>
+                                </div>
+                                <form asp-action="Unarchive" method="post" style="display: inline;">
+                                    <input type="hidden" name="id" value="@task.Id" />
+                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این تسک را از آرشیو خارج کنید؟')">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>بازیابی
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+.card {
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.text-muted {
+    font-size: 0.8rem;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.card-text {
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.archive-info {
+    background-color: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border-left: 3px solid #6c757d;
+}
+</style>

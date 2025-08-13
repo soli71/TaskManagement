@@ -1,0 +1,160 @@
+@model TaskManagementMvc.Models.EmailTemplate
+
+@{
+    ViewData["Title"] = "ایجاد قالب ایمیل جدید";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-envelope-plus me-2"></i>
+                        ایجاد قالب ایمیل جدید
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label fw-semibold">نام قالب <span class="text-danger">*</span></label>
+                                    <input asp-for="Name" class="form-control" placeholder="مثال: قالب فاکتور" />
+                                    <span asp-validation-for="Name" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Subject" class="form-label fw-semibold">موضوع ایمیل <span class="text-danger">*</span></label>
+                                    <input asp-for="Subject" class="form-control" placeholder="مثال: فاکتور شماره {{InvoiceNumber}}" />
+                                    <span asp-validation-for="Subject" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-semibold">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="2" placeholder="توضیح مختصری درباره این قالب"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Body" class="form-label fw-semibold">متن قالب <span class="text-danger">*</span></label>
+                            <textarea asp-for="Body" class="form-control" rows="12" placeholder="متن قالب ایمیل را اینجا بنویسید..."></textarea>
+                            <span asp-validation-for="Body" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                می‌توانید از متغیرهای زیر استفاده کنید: {{InvoiceNumber}}, {{TotalAmount}}, {{CustomerName}}, {{IssueDate}}, {{TaskList}}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AvailableVariables" class="form-label fw-semibold">متغیرهای قابل استفاده</label>
+                            <input asp-for="AvailableVariables" class="form-control" placeholder="متغیرها را با کاما جدا کنید" />
+                            <span asp-validation-for="AvailableVariables" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                متغیرهایی که در این قالب قابل استفاده هستند را مشخص کنید
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label fw-semibold">
+                                    این قالب فعال باشد
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i>بازگشت
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>ایجاد قالب
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Template Examples -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-info bg-opacity-10 text-info">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        نمونه‌های قالب
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">قالب فاکتور ساده:</h6>
+                            <div class="bg-light p-3 rounded small">
+                                <strong>موضوع:</strong> فاکتور شماره {{InvoiceNumber}}<br/>
+                                <strong>متن:</strong><br/>
+                                سلام،<br/>
+                                فاکتور شماره {{InvoiceNumber}} با مبلغ {{TotalAmount}} صادر شده است.<br/>
+                                تاریخ: {{IssueDate}}<br/>
+                                با تشکر
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">قالب فاکتور تفصیلی:</h6>
+                            <div class="bg-light p-3 rounded small">
+                                <strong>موضوع:</strong> فاکتور تفصیلی شماره {{InvoiceNumber}}<br/>
+                                <strong>متن:</strong><br/>
+                                سلام،<br/>
+                                فاکتور شماره {{InvoiceNumber}} با جزئیات زیر صادر شده است:<br/>
+                                {{TaskList}}<br/>
+                                مبلغ کل: {{TotalAmount}}<br/>
+                                تاریخ: {{IssueDate}}<br/>
+                                با تشکر
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-resize textarea
+        const textarea = document.querySelector('textarea[rows="12"]');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        // Set initial height
+        textarea.style.height = textarea.scrollHeight + 'px';
+    </script>
+}
+
+<style>
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-label {
+    color: #495057;
+}
+
+.form-text {
+    font-size: 0.875rem;
+}
+
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+</style>

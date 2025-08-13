@@ -1,0 +1,159 @@
+@{
+    ViewData["Title"] = "صفحه اصلی";
+}
+
+<!-- Hero Section -->
+<div class="hero-section text-center py-5 mb-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="hero-title display-4 fw-bold text-white mb-4">
+                    <i class="bi bi-kanban-fill me-3"></i>
+                    سیستم مدیریت تسک حرفه‌ای
+                </h1>
+                <p class="hero-subtitle lead text-white-50 mb-4">
+                    مدیریت هوشمند پروژه‌ها، تیم‌ها و وظایف با ابزارهای پیشرفته
+                </p>
+                <div class="hero-buttons">
+                    <a href="#features" class="btn btn-light btn-lg me-3 px-4">
+                        <i class="bi bi-play-circle me-2"></i>شروع کنید
+                    </a>
+                    <a href="#learn-more" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-info-circle me-2"></i>بیشتر بدانید
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div id="features" class="container mb-5">
+    <div class="row text-center mb-5">
+        <div class="col-12">
+            <h2 class="section-title display-6 fw-bold text-dark mb-3">ویژگی‌های کلیدی</h2>
+            <p class="section-subtitle lead text-muted">ابزارهای قدرتمند برای مدیریت بهتر پروژه‌ها</p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card text-center p-4 h-100">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+                </div>
+                <h4 class="feature-title h5 fw-bold mb-3">مدیریت گریدها</h4>
+                <p class="feature-text text-muted">سازماندهی و مدیریت کارآمد گریدهای کاری</p>
+                <a asp-controller="Grades" asp-action="Index" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>مشاهده
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card text-center p-4 h-100">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-people-fill text-success"></i>
+                </div>
+                <h4 class="feature-title h5 fw-bold mb-3">تیم کاری</h4>
+                <p class="feature-text text-muted">مدیریت اعضای تیم و مسئولیت‌ها</p>
+                <a asp-controller="Performers" asp-action="Index" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>مشاهده
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card text-center p-4 h-100">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-list-task text-warning"></i>
+                </div>
+                <h4 class="feature-title h5 fw-bold mb-3">مدیریت تسک‌ها</h4>
+                <p class="feature-text text-muted">پیگیری و مدیریت وظایف پروژه</p>
+                <a asp-controller="Tasks" asp-action="Index" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>مشاهده
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card text-center p-4 h-100">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-receipt-cutoff text-info"></i>
+                </div>
+                <h4 class="feature-title h5 fw-bold mb-3">صورتحساب‌ها</h4>
+                <p class="feature-text text-muted">مدیریت مالی و گزارش‌گیری</p>
+                <a asp-controller="Invoices" asp-action="Index" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>مشاهده
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="feature-card text-center p-4 h-100">
+                <div class="feature-icon mb-3">
+                    <i class="bi bi-building text-danger"></i>
+                </div>
+                <h4 class="feature-title h5 fw-bold mb-3">بورد شرکت‌ها (ادمین)</h4>
+                <p class="feature-text text-muted">انتخاب شرکت و مشاهده پروژه‌ها و تسک‌ها</p>
+                <a asp-controller="Companies" asp-action="Overview" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>باز کردن بورد
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section py-5 mb-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-item">
+                    <div class="stat-number display-6 fw-bold text-primary mb-2">150+</div>
+                    <div class="stat-label text-muted">پروژه موفق</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-item">
+                    <div class="stat-number display-6 fw-bold text-success mb-2">500+</div>
+                    <div class="stat-label text-muted">تسک تکمیل شده</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-item">
+                    <div class="stat-number display-6 fw-bold text-warning mb-2">50+</div>
+                    <div class="stat-label text-muted">تیم فعال</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-item">
+                    <div class="stat-number display-6 fw-bold text-info mb-2">99%</div>
+                    <div class="stat-label text-muted">رضایت کاربران</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div id="learn-more" class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+            <div class="cta-card p-5">
+                <h3 class="cta-title h3 fw-bold mb-3">آماده شروع هستید؟</h3>
+                <p class="cta-text text-muted mb-4">
+                    همین امروز سیستم مدیریت تسک خود را راه‌اندازی کنید و بهره‌وری تیم خود را افزایش دهید
+                </p>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary btn-lg me-3 px-4">
+                        <i class="bi bi-rocket-takeoff me-2"></i>شروع رایگان
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="bi bi-question-circle me-2"></i>راهنما
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

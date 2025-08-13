@@ -1,0 +1,70 @@
+@model TaskFormViewModel
+@{ ViewData["Title"] = "ویرایش تسک"; }
+<h2>ویرایش تسک</h2>
+<form asp-action="Edit">
+    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">انجام‌دهنده</label>
+        <select asp-for="PerformerId" asp-items="Model.Performers" class="form-select"></select>
+    </div>
+    <div class="row">
+        <div class="col">
+            <label asp-for="StartAt" class="form-label"></label>
+            <input asp-for="StartAt" class="form-control" />
+        </div>
+        <div class="col">
+            <label asp-for="EndAt" class="form-label"></label>
+            <input asp-for="EndAt" class="form-control" />
+        </div>
+        <div class="col">
+            <label asp-for="Hours" class="form-label"></label>
+            <input asp-for="Hours" class="form-control" />
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col">
+            <label asp-for="OriginalEstimateHours" class="form-label"></label>
+            <input asp-for="OriginalEstimateHours" class="form-control" />
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">ذخیره</button>
+</form>
+
+<hr/>
+<h4>ضمائم</h4>
+<form asp-action="UploadAttachment" asp-controller="Tasks" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="taskId" value="@Model.Id" />
+    <div class="input-group mb-3">
+        <input type="file" name="file" class="form-control" required />
+        <button class="btn btn-outline-secondary" type="submit">آپلود</button>
+    </div>
+    <ul class="list-group">
+        @foreach (var a in Model.Attachments ?? new List<TaskManagementMvc.Models.TaskAttachment>())
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@a.FileName (@a.FileSize bytes)</span>
+                <a asp-action="DownloadAttachment" asp-controller="Tasks" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">دانلود</a>
+            </li>
+        }
+    </ul>
+</form>
+
+<hr/>
+<h4>تاریخچه تغییرات</h4>
+<ul class="list-group">
+    @foreach (var h in (Model.HistoryEntries ?? new List<TaskManagementMvc.Models.TaskHistory>()).OrderByDescending(x => x.ChangedAt))
+    {
+        <li class="list-group-item">
+            <div><strong>@h.Field</strong>: @h.OldValue => @h.NewValue</div>
+            <small class="text-muted">@h.ChangedAt.ToLocalTime() توسط @h.ChangedBy</small>
+        </li>
+    }
+</ul>

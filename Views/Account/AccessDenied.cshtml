@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "دسترسی غیرمجاز";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="alert alert-danger shadow-sm mt-4">
+                <h5 class="alert-heading">
+                    <i class="bi bi-shield-exclamation me-2"></i>
+                    دسترسی غیرمجاز
+                </h5>
+                <p class="mb-0">شما دسترسی لازم برای مشاهده این صفحه را ندارید. در صورت نیاز با مدیر سیستم تماس بگیرید.</p>
+            </div>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary mt-2">
+                بازگشت به صفحه اصلی
+            </a>
+        </div>
+    </div>
+</div>

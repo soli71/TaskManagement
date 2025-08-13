@@ -1,0 +1,21 @@
+@model IEnumerable<TaskManagementMvc.Models.Grade>
+@{
+    ViewData["Title"] = "گریدها";
+}
+<h2>لیست گریدها</h2>
+<p><a class="btn btn-primary" asp-action="Create">تعریف گرید جدید</a></p>
+<table class="table table-striped">
+    <thead><tr><th>شناسه</th><th>نام</th><th>نرخ</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var g in Model)
+    {
+        <tr>
+            <td>@g.Id</td><td>@g.Name</td><td>@g.HourlyRate</td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@g.Id">ویرایش</a> |
+                <a asp-action="Delete" asp-route-id="@g.Id">حذف</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

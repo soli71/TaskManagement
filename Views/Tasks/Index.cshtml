@@ -1,0 +1,509 @@
+@model IEnumerable<TaskManagementMvc.Models.TaskItem>
+@using TaskManagementMvc.Models
+
+@{
+    ViewData["Title"] = "مدیریت تسک‌ها";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-kanban text-primary"></i>
+                برد تسک‌ها
+            </h1>
+            <p class="page-subtitle">مدیریت و پیگیری تسک‌ها در قالب بورد کانبان</p>
+        </div>
+        <div class="page-actions">
+            <a asp-action="Archived" class="btn btn-outline-secondary">
+                <i class="bi bi-archive me-2"></i>تسک‌های آرشیو شده
+            </a>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>تسک جدید
+            </a>
+        </div>
+    </div>
+
+    <!-- Kanban Board with Horizontal Scroll -->
+    <div class="kanban-board-container">
+        <div class="kanban-board">
+            <!-- In Progress Column -->
+            <div class="kanban-column">
+                <div class="kanban-header bg-warning bg-opacity-75 text-dark border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="bi bi-arrow-clockwise me-2"></i>
+                            در حال انجام
+                        </h6>
+                        <span class="badge bg-dark bg-opacity-75 text-white rounded-pill">@Model.Count(t => t.Status == TaskManagementMvc.Models.TaskStatus.InProgress)</span>
+                    </div>
+                </div>
+                <div class="kanban-body" data-status="InProgress">
+                    @foreach (var task in Model.Where(t => t.Status == TaskManagementMvc.Models.TaskStatus.InProgress))
+                    {
+                        <div class="kanban-card" data-task-id="@task.Id">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h6 class="card-title mb-0 fw-semibold text-dark">@task.Title</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@task.Id"><i class="bi bi-pencil me-2"></i>ویرایش</a></li>
+                                        <li><a class="dropdown-item" asp-action="Details" asp-route-id="@task.Id"><i class="bi bi-eye me-2"></i>جزئیات</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form asp-action="Archive" method="post" style="display: inline;">
+                                                <input type="hidden" name="id" value="@task.Id" />
+                                                <button type="submit" class="dropdown-item text-warning" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این تسک را آرشیو کنید؟')">
+                                                    <i class="bi bi-archive me-2"></i>آرشیو
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@task.Id"><i class="bi bi-trash me-2"></i>حذف</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted small mb-3">@(task.Description?.Length > 80 ? task.Description.Substring(0, 80) + "..." : task.Description)</p>
+                            <div class="task-meta">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-primary">@task.Hours ساعت</span>
+                                    @if (task.OriginalEstimateHours.HasValue)
+                                    {
+                                        <span class="badge bg-secondary">تخمین: @task.OriginalEstimateHours ساعت</span>
+                                    }
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        @(task.StartAt?.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>
+                                        @(task.Performer?.Name ?? "تخصیص داده نشده")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Completed Column -->
+            <div class="kanban-column">
+                <div class="kanban-header bg-success bg-opacity-75 text-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="bi bi-check-circle me-2"></i>
+                            تکمیل شده
+                        </h6>
+                        <span class="badge bg-dark bg-opacity-75 text-white rounded-pill">@Model.Count(t => t.Status == TaskManagementMvc.Models.TaskStatus.Completed)</span>
+                    </div>
+                </div>
+                <div class="kanban-body" data-status="Completed">
+                    @foreach (var task in Model.Where(t => t.Status == TaskManagementMvc.Models.TaskStatus.Completed))
+                    {
+                        <div class="kanban-card" data-task-id="@task.Id">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h6 class="card-title mb-0 fw-semibold text-dark">@task.Title</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@task.Id"><i class="bi bi-pencil me-2"></i>ویرایش</a></li>
+                                        <li><a class="dropdown-item" asp-action="Details" asp-route-id="@task.Id"><i class="bi bi-eye me-2"></i>جزئیات</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form asp-action="Archive" method="post" style="display: inline;">
+                                                <input type="hidden" name="id" value="@task.Id" />
+                                                <button type="submit" class="dropdown-item text-warning" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این تسک را آرشیو کنید؟')">
+                                                    <i class="bi bi-archive me-2"></i>آرشیو
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@task.Id"><i class="bi bi-trash me-2"></i>حذف</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted small mb-3">@(task.Description?.Length > 80 ? task.Description.Substring(0, 80) + "..." : task.Description)</p>
+                            <div class="task-meta">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-primary">@task.Hours ساعت</span>
+                                    @if (task.OriginalEstimateHours.HasValue)
+                                    {
+                                        <span class="badge bg-secondary">تخمین: @task.OriginalEstimateHours ساعت</span>
+                                    }
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        @(task.StartAt?.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>
+                                        @(task.Performer?.Name ?? "تخصیص داده نشده")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Invoiced Column -->
+            <div class="kanban-column">
+                <div class="kanban-header bg-info bg-opacity-75 text-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="bi bi-receipt me-2"></i>
+                            صورتحساب شده
+                        </h6>
+                        <span class="badge bg-dark bg-opacity-75 text-white rounded-pill">@Model.Count(t => t.Status == TaskManagementMvc.Models.TaskStatus.Invoiced)</span>
+                    </div>
+                </div>
+                <div class="kanban-body" data-status="Invoiced">
+                    @foreach (var task in Model.Where(t => t.Status == TaskManagementMvc.Models.TaskStatus.Invoiced))
+                    {
+                        <div class="kanban-card" data-task-id="@task.Id">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h6 class="card-title mb-0 fw-semibold text-dark">@task.Title</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@task.Id"><i class="bi bi-pencil me-2"></i>ویرایش</a></li>
+                                        <li><a class="dropdown-item" asp-action="Details" asp-route-id="@task.Id"><i class="bi bi-eye me-2"></i>جزئیات</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form asp-action="Archive" method="post" style="display: inline;">
+                                                <input type="hidden" name="id" value="@task.Id" />
+                                                <button type="submit" class="dropdown-item text-warning" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این تسک را آرشیو کنید؟')">
+                                                    <i class="bi bi-archive me-2"></i>آرشیو
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@task.Id"><i class="bi bi-trash me-2"></i>حذف</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted small mb-3">@(task.Description?.Length > 80 ? task.Description.Substring(0, 80) + "..." : task.Description)</p>
+                            <div class="task-meta">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-primary">@task.Hours ساعت</span>
+                                    @if (task.OriginalEstimateHours.HasValue)
+                                    {
+                                        <span class="badge bg-secondary">تخمین: @task.OriginalEstimateHours ساعت</span>
+                                    }
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        @(task.StartAt?.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>
+                                        @(task.Performer?.Name ?? "تخصیص داده نشده")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Paid Column -->
+            <div class="kanban-column">
+                <div class="kanban-header bg-success bg-opacity-75 text-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="bi bi-cash-coin me-2"></i>
+                            پرداخت شده
+                        </h6>
+                        <span class="badge bg-dark bg-opacity-75 text-white rounded-pill">@Model.Count(t => t.Status == TaskManagementMvc.Models.TaskStatus.Paid)</span>
+                    </div>
+                </div>
+                <div class="kanban-body" data-status="Paid">
+                    @foreach (var task in Model.Where(t => t.Status == TaskManagementMvc.Models.TaskStatus.Paid))
+                    {
+                        <div class="kanban-card" data-task-id="@task.Id">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h6 class="card-title mb-0 fw-semibold text-dark">@task.Title</h6>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@task.Id"><i class="bi bi-pencil me-2"></i>ویرایش</a></li>
+                                        <li><a class="dropdown-item" asp-action="Details" asp-route-id="@task.Id"><i class="bi bi-eye me-2"></i>جزئیات</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form asp-action="Archive" method="post" style="display: inline;">
+                                                <input type="hidden" name="id" value="@task.Id" />
+                                                <button type="submit" class="dropdown-item text-warning" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این تسک را آرشیو کنید؟')">
+                                                    <i class="bi bi-archive me-2"></i>آرشیو
+                                                </button>
+                                            </form>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@task.Id"><i class="bi bi-trash me-2"></i>حذف</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="card-text text-muted small mb-3">@(task.Description?.Length > 80 ? task.Description.Substring(0, 80) + "..." : task.Description)</p>
+                            <div class="task-meta">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-primary">@task.Hours ساعت</span>
+                                    @if (task.OriginalEstimateHours.HasValue)
+                                    {
+                                        <span class="badge bg-secondary">تخمین: @task.OriginalEstimateHours ساعت</span>
+                                    }
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        @(task.StartAt?.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>
+                                        @(task.Performer?.Name ?? "تخصیص داده نشده")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal container -->
+<div class="modal fade" id="taskQuickModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">ویرایش سریع تسک</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="taskQuickModalBody">
+        <div class="text-center text-muted">در حال بارگذاری...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SortableJS for smooth DnD -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<!-- Drag and Drop JavaScript -->
+<script>
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+    const boardContainer = document.querySelector('.kanban-board-container');
+
+    // Double click to open modal
+    document.querySelectorAll('.kanban-card').forEach(card => {
+      card.addEventListener('dblclick', async function() {
+        const taskId = this.dataset.taskId;
+        await openQuickModal(taskId);
+      });
+    });
+
+    // Utilities for drop-target highlight
+    function clearDropTargets() {
+      document.querySelectorAll('.kanban-body.is-drop-target, .kanban-column.is-drop-target').forEach(el => el.classList.remove('is-drop-target'));
+    }
+
+    // Initialize Sortable on each column
+    const kanbanBodies = document.querySelectorAll('.kanban-body');
+    kanbanBodies.forEach(function(body){
+      new Sortable(body, {
+        group: 'kanban',
+        animation: 220,
+        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+        draggable: '.kanban-card',
+        handle: '.kanban-card',
+        ghostClass: 'drag-ghost',
+        chosenClass: 'drag-chosen',
+        dragClass: 'dragging',
+        forceFallback: true,
+        fallbackOnBody: true,
+        swapThreshold: 0.5,
+        emptyInsertThreshold: 10,
+        scroll: true,
+        scrollSensitivity: 80,
+        scrollSpeed: 14,
+        onStart: function () {
+          document.body.classList.add('dnd-active');
+        },
+        onMove: function (evt) {
+          clearDropTargets();
+          const dropBody = evt.to;
+          if (dropBody?.classList?.contains('kanban-body')) {
+            dropBody.classList.add('is-drop-target');
+            dropBody.closest('.kanban-column')?.classList.add('is-drop-target');
+          }
+          return true;
+        },
+        onAdd: function (evt) {
+          // Pulse header on destination column
+          const header = evt.to?.previousElementSibling;
+          if (header?.classList?.contains('kanban-header')) {
+            header.classList.add('snap-pulse');
+            setTimeout(() => header.classList.remove('snap-pulse'), 420);
+          }
+        },
+        onEnd: async function (evt) {
+          document.body.classList.remove('dnd-active');
+          clearDropTargets();
+          const card = evt.item;
+          const taskId = card.dataset.taskId;
+          const newStatus = evt.to?.dataset?.status;
+          const oldStatus = evt.from?.dataset?.status;
+
+          if (!taskId || !newStatus || newStatus === oldStatus) {
+            updateColumnCounts();
+            return;
+          }
+
+          const success = await updateTaskStatus(taskId, newStatus);
+          if (success) {
+            updateColumnCounts();
+            showNotification('وضعیت تسک با موفقیت به‌روزرسانی شد', 'success');
+          } else {
+            if (evt.from && typeof evt.oldIndex === 'number') {
+              try { evt.from.insertBefore(card, evt.from.children[evt.oldIndex] || null); } catch (e) {}
+            }
+            updateColumnCounts();
+            showNotification('خطا در به‌روزرسانی وضعیت', 'error');
+          }
+        }
+      });
+    });
+
+    async function updateTaskStatus(taskId, newStatus) {
+      try {
+        const response = await fetch(`/Tasks/UpdateStatus/${taskId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': getAntiForgeryToken()
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (response.ok) {
+          const result = await response.json();
+          return !!result?.success;
+        }
+        return false;
+      } catch (error) {
+        console.error('Error updating task status:', error);
+        return false;
+      }
+    }
+
+    function getAntiForgeryToken() {
+      const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+      return token || '';
+    }
+
+    function updateColumnCounts() {
+      document.querySelectorAll('.kanban-column').forEach(column => {
+        const body = column.querySelector('.kanban-body');
+        if (!body) return;
+        const count = body.querySelectorAll('.kanban-card').length;
+        const badge = column.querySelector('.badge');
+        if (badge) { badge.textContent = count; }
+      });
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+      notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+      notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => { notification.remove(); }, 3000);
+    }
+
+    async function openQuickModal(taskId) {
+      const modalEl = document.getElementById('taskQuickModal');
+      const modalBody = document.getElementById('taskQuickModalBody');
+      modalBody.innerHTML = '<div class="text-center text-muted">در حال بارگذاری...</div>';
+      const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+      try {
+        const response = await fetch(`/Tasks/QuickView/${taskId}`);
+        const html = await response.text();
+        modalBody.innerHTML = html;
+        const form = modalBody.querySelector('#task-quick-form');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const resp = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+          });
+          const result = await resp.json();
+          if (result.success) {
+            const card = document.querySelector(`[data-task-id="${result.item.id}"]`);
+            if (card) {
+              card.querySelector('.card-title').textContent = result.item.title;
+              const metaHours = card.querySelector('.badge.bg-primary');
+              if (metaHours) metaHours.textContent = result.item.hours + ' ساعت';
+              const currentBody = card.closest('.kanban-body');
+              const desiredBody = document.querySelector(`.kanban-body[data-status="${result.item.status}"]`);
+              if (currentBody && desiredBody && currentBody !== desiredBody) {
+                desiredBody.appendChild(card);
+              }
+            }
+            modal.hide();
+            showNotification('ذخیره شد', 'success');
+            updateColumnCounts();
+          } else {
+            showNotification('خطا در ذخیره', 'error');
+          }
+        });
+      } catch (e) {
+        modalBody.innerHTML = '<div class="text-danger">خطا در بارگذاری فرم</div>';
+      }
+    }
+  });
+})();
+</script>
+
+<style>
+/* Drag state visuals for "tearing" feel */
+.drag-chosen {
+    transform: rotate(-2deg) scale(1.03) translateZ(0);
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.15);
+    filter: saturate(1.05);
+}
+
+/* Snap pulse on header when dropped */
+@@keyframes pulseGlow { 
+    0%{box-shadow: 0 0 0 0 rgba(99,102,241,0.0);} 
+    50%{box-shadow: 0 0 0 8px rgba(99,102,241,0.15);} 
+    100%{box-shadow: 0 0 0 0 rgba(99,102,241,0.0);} 
+}
+.snap-pulse { animation: pulseGlow 420ms ease-out; }
+
+/* Disable selection during DnD */
+.dnd-active, .dnd-active * { user-select: none !important; }
+
+/* Responsive adjustments */
+@@media (max-width: 768px) {
+    .kanban-column { min-width: 280px; }
+    .kanban-board { gap: 12px; }
+}
+</style>

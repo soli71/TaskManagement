@@ -1,0 +1,54 @@
+@model TaskFormViewModel
+@{ ViewData["Title"] = "تعریف تسک"; }
+<h2>تعریف تسک</h2>
+<form asp-action="Create">
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">انجام‌دهنده</label>
+        <select asp-for="PerformerId" asp-items="Model.Performers" class="form-select"></select>
+    </div>
+    <div class="row">
+        <div class="col">
+            <label asp-for="StartAt" class="form-label"></label>
+            <input asp-for="StartAt" class="form-control" />
+        </div>
+        <div class="col">
+            <label asp-for="EndAt" class="form-label"></label>
+            <input asp-for="EndAt" class="form-control" />
+        </div>
+        <div class="col">
+            <label asp-for="Hours" class="form-label"></label>
+            <input asp-for="Hours" class="form-control" />
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col">
+            <label asp-for="OriginalEstimateHours" class="form-label"></label>
+            <input asp-for="OriginalEstimateHours" class="form-control" />
+        </div>
+        <div class="col">
+            <label asp-for="ProjectId" class="form-label">پروژه</label>
+            <select asp-for="ProjectId" asp-items="Model.Projects" class="form-select">
+                <option value="">انتخاب کنید</option>
+            </select>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <div class="col">
+            <label asp-for="Status" class="form-label">وضعیت</label>
+            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TaskStatus>()"></select>
+        </div>
+        <div class="col">
+            <label asp-for="Priority" class="form-label">اولویت</label>
+            <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<TaskPriority>()"></select>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success mt-3">ثبت</button>
+</form>

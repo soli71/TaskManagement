@@ -1,0 +1,52 @@
+@model TaskManagementMvc.Models.ApplicationUser
+@{
+    ViewData["Title"] = "پروفایل";
+    var roles = ViewData["UserRoles"] as IEnumerable<string> ?? Array.Empty<string>();
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle me-2"></i>
+                        پروفایل کاربری
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-2"><strong>نام کامل:</strong> @Model.FullName</div>
+                            <div class="mb-2"><strong>نام کاربری:</strong> @Model.UserName</div>
+                            <div class="mb-2"><strong>ایمیل:</strong> @Model.Email</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2"><strong>شماره تلفن:</strong> @(Model.PhoneNumber ?? "-")</div>
+                            <div class="mb-2"><strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
+                            <div class="mb-2"><strong>آخرین ورود:</strong> @(Model.LastLoginAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>نقش‌ها:</strong>
+                        @if (!roles.Any())
+                        {
+                            <span class="text-muted">بدون نقش</span>
+                        }
+                        else
+                        {
+                            foreach (var r in roles)
+                            {
+                                <span class="badge bg-secondary me-1">@r</span>
+                            }
+                        }
+                    </div>
+                    <a asp-action="ChangePassword" class="btn btn-outline-primary">
+                        <i class="bi bi-key me-1"></i>
+                        تغییر رمز عبور
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

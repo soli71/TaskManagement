@@ -1,0 +1,57 @@
+@model TaskManagementMvc.Controllers.LoginViewModel
+@{
+    ViewData["Title"] = "ورود";
+}
+
+<div class="container auth-wrapper">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm auth-card mt-4 elevated">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        ورود به سیستم
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Login" method="post">
+                        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                        <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="UserName" class="form-label fw-semibold"></label>
+                            <input asp-for="UserName" class="form-control" autofocus />
+                            <span asp-validation-for="UserName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label"></label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>
+                                ورود
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center text-muted small mt-3">
+                <span>نام کاربری پیش‌فرض: admin — رمز: Admin123!</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+}

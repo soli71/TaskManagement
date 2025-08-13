@@ -1,0 +1,29 @@
+@model TaskManagementMvc.Models.Permission
+
+@{
+    var roles = ViewData["Roles"] as List<TaskManagementMvc.Models.RolePermission> ?? new();
+}
+
+<div class="container">
+    <h2>جزئیات دسترسی: @Model.Name</h2>
+    <dl class="row">
+        <dt class="col-sm-2">کد</dt>
+        <dd class="col-sm-10"><code>@Model.Code</code></dd>
+        <dt class="col-sm-2">گروه</dt>
+        <dd class="col-sm-10">@Model.Group</dd>
+        <dt class="col-sm-2">توضیحات</dt>
+        <dd class="col-sm-10">@Model.Description</dd>
+    </dl>
+
+    <h4 class="mt-4">نقش‌های دارای این دسترسی</h4>
+    <ul>
+        @foreach (var rp in roles)
+        {
+            <li>@rp.Role?.Name</li>
+        }
+    </ul>
+
+    <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+</div>
+
+

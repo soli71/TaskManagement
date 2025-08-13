@@ -1,0 +1,29 @@
+@model TaskManagementMvc.Models.Permission
+
+<div class="container">
+    <h2>ایجاد دسترسی</h2>
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Code" class="form-label"></label>
+            <input asp-for="Code" class="form-control" />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Group" class="form-label"></label>
+            <input asp-for="Group" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">ثبت</button>
+        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+    </form>
+</div>
+
+

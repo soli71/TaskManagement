@@ -1,0 +1,36 @@
+@model IEnumerable<TaskManagementMvc.Models.Company>
+
+<div class="container">
+    <h2>شرکت‌ها</h2>
+
+    <p>
+        <a asp-action="Create" class="btn btn-primary">ایجاد شرکت</a>
+    </p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>نام</th>
+                <th>ایمیل</th>
+                <th>فعال</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Email</td>
+                <td>@(item.IsActive ? "بله" : "خیر")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">جزئیات</a>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+

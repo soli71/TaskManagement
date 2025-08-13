@@ -1,0 +1,13 @@
+@model TaskManagementMvc.Models.Company
+
+<div class="container">
+    <h2>تغییر وضعیت شرکت</h2>
+    <p>آیا از تغییر وضعیت شرکت <strong>@Model.Name</strong> مطمئن هستید؟</p>
+    <form asp-action="ToggleActive" method="post">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-warning">تغییر وضعیت</button>
+        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+    </form>
+</div>
+
+

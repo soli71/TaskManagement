@@ -1,0 +1,13 @@
+@model TaskManagementMvc.Models.TaskItem
+@{ ViewData["Title"] = "تغییر وضعیت"; var statuses = Html.GetEnumSelectList<TaskManagementMvc.Models.TaskStatus>(); }
+<h2>تغییر وضعیت: @Model.Title</h2>
+<form asp-action="ChangeStatus">
+    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label class="form-label">وضعیت</label>
+        <select name="status" class="form-select">
+        @foreach (var s in statuses) { <option value="@s.Value" selected="@(s.Value == ((int)Model.Status).ToString())">@s.Text</option> }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">ذخیره</button>
+</form>

@@ -1,0 +1,36 @@
+@model TaskManagementMvc.Models.ApplicationRole
+
+@{
+    var permissions = ViewData["Permissions"] as List<TaskManagementMvc.Models.RolePermission> ?? new();
+    var users = ViewData["Users"] as List<TaskManagementMvc.Models.UserRole> ?? new();
+}
+
+<div class="container">
+    <h2>جزئیات نقش: @Model.Name</h2>
+    <dl class="row">
+        <dt class="col-sm-2">توضیحات</dt>
+        <dd class="col-sm-10">@Model.Description</dd>
+        <dt class="col-sm-2">وضعیت</dt>
+        <dd class="col-sm-10">@(Model.IsActive ? "بله" : "خیر")</dd>
+    </dl>
+
+    <h4>کاربران</h4>
+    <ul>
+        @foreach (var ur in users)
+        {
+            <li>@ur.User?.FullName (@ur.User?.UserName)</li>
+        }
+    </ul>
+
+    <h4 class="mt-3">دسترسی‌ها</h4>
+    <ul>
+        @foreach (var rp in permissions)
+        {
+            <li>@rp.Permission?.Name (@rp.Permission?.Code)</li>
+        }
+    </ul>
+
+    <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+</div>
+
+

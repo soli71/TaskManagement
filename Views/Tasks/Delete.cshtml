@@ -1,0 +1,9 @@
+@model TaskManagementMvc.Models.TaskItem
+@{ ViewData["Title"] = "حذف تسک"; }
+<h2>حذف تسک</h2>
+<div><strong>@Model.Title</strong> - @Model.Status</div>
+<form asp-action="DeleteConfirmed">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">حذف</button>
+    <a class="btn btn-secondary" asp-action="Index">انصراف</a>
+</form>

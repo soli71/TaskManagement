@@ -1,0 +1,16 @@
+@model IEnumerable<TaskManagementMvc.Models.Performer>
+@{ ViewData["Title"] = "انجام‌دهندگان"; }
+<h2>لیست انجام‌دهندگان</h2>
+<p><a class="btn btn-primary" asp-action="Create">افزودن انجام‌دهنده</a></p>
+<table class="table table-striped">
+<thead><tr><th>شناسه</th><th>نام</th><th>گرید</th><th></th></tr></thead>
+<tbody>
+@foreach (var p in Model)
+{
+    <tr>
+        <td>@p.Id</td><td>@p.Name</td><td>@p.Grade?.Name</td>
+        <td><a asp-action="Edit" asp-route-id="@p.Id">ویرایش</a> | <a asp-action="Delete" asp-route-id="@p.Id">حذف</a></td>
+    </tr>
+}
+</tbody>
+</table>

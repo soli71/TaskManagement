@@ -1,0 +1,54 @@
+@model ProjectFormViewModel
+
+@{
+    var companies = Model.Companies;
+    var managers = Model.ProjectManagers;
+}
+
+<div class="container">
+    <h2>ایجاد پروژه</h2>
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control"></textarea>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Code" class="form-label"></label>
+            <input asp-for="Code" class="form-control" />
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="CompanyId" class="form-label">شرکت</label>
+                <select asp-for="CompanyId" class="form-select" asp-items="@(new SelectList(companies, "Id", "Name", Model.CompanyId))"></select>
+                <span asp-validation-for="CompanyId" class="text-danger"></span>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="ProjectManagerId" class="form-label">مدیر پروژه</label>
+                <select asp-for="ProjectManagerId" class="form-select" asp-items="@(new SelectList(managers, "Id", "FullName", Model.ProjectManagerId))"></select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="StartDate" class="form-label"></label>
+                <input asp-for="StartDate" class="form-control" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="EstimatedEndDate" class="form-label"></label>
+                <input asp-for="EstimatedEndDate" class="form-control" />
+            </div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Budget" class="form-label"></label>
+            <input asp-for="Budget" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary">ثبت</button>
+        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+    </form>
+</div>
+
+

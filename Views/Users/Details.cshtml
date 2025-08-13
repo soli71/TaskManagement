@@ -1,0 +1,20 @@
+@model TaskManagementMvc.Models.ApplicationUser
+
+@{
+    var roles = ViewData["UserRoles"] as IList<string> ?? new List<string>();
+}
+
+<div class="container">
+    <h2>جزئیات کاربر: @Model.FullName</h2>
+    <dl class="row">
+        <dt class="col-sm-2">نام کاربری</dt>
+        <dd class="col-sm-10">@Model.UserName</dd>
+        <dt class="col-sm-2">ایمیل</dt>
+        <dd class="col-sm-10">@Model.Email</dd>
+        <dt class="col-sm-2">نقش‌ها</dt>
+        <dd class="col-sm-10">@string.Join(", ", roles)</dd>
+    </dl>
+    <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+</div>
+
+

@@ -1,0 +1,14 @@
+@model IEnumerable<TaskManagementMvc.Models.TaskItem>
+@{ ViewData["Title"] = "انجام شده/صورتحساب نشده"; }
+<h2>تسک‌های انجام شده و صورتحساب نشده</h2>
+<table class="table table-striped">
+    <thead><tr><th>شناسه</th><th>عنوان</th><th>انجام‌دهنده</th><th>تاریخ پایان</th></tr></thead>
+    <tbody>
+    @foreach (var t in Model)
+    {
+        <tr>
+            <td>@t.Id</td><td>@t.Title</td><td>@t.Performer?.Name</td><td>@t.EndAt</td>
+        </tr>
+    }
+    </tbody>
+</table>

@@ -1,0 +1,14 @@
+@model TaskManagementMvc.Models.Project
+
+<div class="container">
+    <h2>تسک‌های پروژه: @Model.Name</h2>
+    <ul>
+        @foreach (var t in Model.Tasks)
+        {
+            <li>@t.Title — @t.Status (@t.Hours ساعت)</li>
+        }
+    </ul>
+    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">بازگشت</a>
+</div>
+
+

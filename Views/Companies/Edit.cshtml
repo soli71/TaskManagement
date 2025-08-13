@@ -1,0 +1,33 @@
+@model TaskManagementMvc.Models.Company
+
+<div class="container">
+    <h2>ویرایش شرکت</h2>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Address" class="form-label"></label>
+            <input asp-for="Address" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label asp-for="Website" class="form-label"></label>
+            <input asp-for="Website" class="form-control" />
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" asp-for="IsActive" />
+            <label class="form-check-label" asp-for="IsActive"></label>
+        </div>
+        <button type="submit" class="btn btn-primary">ذخیره</button>
+        <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+    </form>
+</div>
+
+

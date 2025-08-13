@@ -1,0 +1,38 @@
+@model IEnumerable<TaskManagementMvc.Models.ViewModels.RoleListViewModel>
+
+<div class="container">
+    <h2>نقش‌ها</h2>
+    <p>
+        <a asp-action="Create" class="btn btn-primary">ایجاد نقش</a>
+    </p>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>نام</th>
+                <th>توضیحات</th>
+                <th>فعال</th>
+                <th>کاربران</th>
+                <th>دسترسی‌ها</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td>@r.Name</td>
+                <td>@r.Description</td>
+                <td>@(r.IsActive ? "بله" : "خیر")</td>
+                <td>@r.UserCount</td>
+                <td>@r.PermissionCount</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@r.Id" class="btn btn-sm btn-secondary">جزئیات</a>
+                    <a asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+

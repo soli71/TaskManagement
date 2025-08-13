@@ -1,0 +1,19 @@
+@model IEnumerable<TaskManagementMvc.Models.Invoice>
+@{ ViewData["Title"] = "صورتحساب‌ها"; }
+<h2>صورتحساب‌ها</h2>
+<p><a class="btn btn-primary" asp-action="Create">صورتحساب جدید</a></p>
+<table class="table table-striped">
+    <thead><tr><th>شناسه</th><th>تاریخ</th><th>ایمیل</th><th>مبلغ</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var i in Model)
+    {
+        <tr>
+            <td>@i.InvoiceNumber</td>
+            <td>@i.InvoiceDate.ToString("yyyy-MM-dd")</td>
+            <td>@i.CustomerEmail</td>
+            <td>@(i.Lines?.Sum(l => l.Amount) ?? 0).ToString("C")</td>
+            <td><a asp-action="Details" asp-route-id="@i.Id">جزئیات</a></td>
+        </tr>
+    }
+    </tbody>
+</table>

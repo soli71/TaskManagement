@@ -1,0 +1,204 @@
+@model TaskManagementMvc.Models.Invoice
+@{
+    ViewData["Title"] = "جزئیات صورتحساب";
+    var emailLogs = ViewData["EmailLogs"] as List<TaskManagementMvc.Models.InvoiceEmailLog> ?? new();
+    var tgLogs = ViewData["TelegramLogs"] as List<TaskManagementMvc.Models.InvoiceTelegramLog> ?? new();
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-receipt me-2"></i>
+                        صورتحساب شماره @Model.Id
+                    </h4>
+                    <div class="d-flex align-items-center gap-2">
+                        @if (Model.EmailSentAt.HasValue)
+                        {
+                            <span class="badge bg-success">ایمیل ارسال شده (@Model.EmailSentAt.Value.ToString("yyyy/MM/dd HH:mm"))</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">ایمیل ارسال نشده</span>
+                        }
+                        <form asp-action="SendEmail" asp-controller="Invoices" method="post" class="m-0">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="btn btn-light btn-sm">
+                                <i class="bi bi-envelope me-1"></i>
+                                ارسال ایمیل
+                            </button>
+                        </form>
+                        <form asp-action="SendTelegram" asp-controller="Invoices" method="post" class="m-0 d-flex">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input name="chatId" class="form-control form-control-sm me-1" placeholder="Chat ID" required />
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-telegram me-1"></i>
+                                ارسال تلگرام
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">اطلاعات صورتحساب</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-semibold">تاریخ صدور:</span>
+                                <span>@Model.InvoiceDate.ToString("yyyy/MM/dd", new System.Globalization.CultureInfo("fa-IR"))</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-semibold">ایمیل گیرنده:</span>
+                                <span>@Model.CustomerEmail</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-semibold">مبلغ کل:</span>
+                                <span class="badge bg-success fs-6">@Model.Lines.Sum(l => l.Amount).ToString("C")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3">
+                        <i class="bi bi-list-ul me-2"></i>
+                        جزئیات محاسبه
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>تسک</th>
+                                    <th>انجام‌دهنده</th>
+                                    <th>سطح</th>
+                                    <th>نرخ نفرساعت</th>
+                                    <th>ساعات</th>
+                                    <th>مبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var l in Model.Lines)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@l.Title</td>
+                                        <td>@l.PerformerName</td>
+                                        <td>@l.GradeName</td>
+                                        <td class="text-end">@l.HourlyRate.ToString("C")</td>
+                                        <td class="text-end">@l.Hours ساعت</td>
+                                        <td class="text-end fw-semibold">@l.Amount.ToString("C")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="5" class="text-end fw-bold">مجموع:</td>
+                                    <td class="text-end fw-bold">@Model.Lines.Sum(l => l.Amount).ToString("C")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <h5 class="mt-4 mb-2">
+                        <i class="bi bi-clock-history me-2"></i>
+                        تاریخچه ارسال
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light"><strong>ایمیل</strong></div>
+                                <div class="card-body">
+                                    @if (!emailLogs.Any())
+                                    {
+                                        <div class="text-muted small">هیچ ایمیلی ارسال نشده است.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="accordion" id="emailLogs">
+                                            @for (int i = 0; i < emailLogs.Count; i++)
+                                            {
+                                                var log = emailLogs[i];
+                                                var collapseId = $"collapseEmail{log.Id}";
+                                                var headingId = $"headingEmail{log.Id}";
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header" id="@headingId">
+                                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                                                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                                                <div>
+                                                                    <span class="fw-semibold">@log.SentAt.ToString("yyyy/MM/dd HH:mm")</span>
+                                                                    <span class="mx-2">|</span>
+                                                                    <span class="text-muted">@log.ToEmail</span>
+                                                                </div>
+                                                                <span class="badge @(log.IsSuccess ? "bg-success" : "bg-danger")">@(log.IsSuccess ? "موفق" : "ناموفق")</span>
+                                                            </div>
+                                                        </button>
+                                                    </h2>
+                                                    <div id="@collapseId" class="accordion-collapse collapse" aria-labelledby="@headingId" data-bs-parent="#emailLogs">
+                                                        <div class="accordion-body">
+                                                            <div class="mb-2"><strong>موضوع:</strong> @log.Subject</div>
+                                                            <div class="mb-2">
+                                                                <strong>بدنه ایمیل:</strong>
+                                                                <div class="p-2 bg-light border rounded" style="max-height: 250px; overflow-y: auto;">
+                                                                    @Html.Raw(log.Body)
+                                                                </div>
+                                                            </div>
+                                                            @if (!string.IsNullOrEmpty(log.Error))
+                                                            {
+                                                                <div class="text-danger small"><strong>خطا:</strong> @log.Error</div>
+                                                            }
+                                                            @if (log.SentBy != null)
+                                                            {
+                                                                <div class="text-muted small">ارسال توسط: @log.SentBy.UserName</div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light"><strong>تلگرام</strong></div>
+                                <div class="card-body">
+                                    @if (!tgLogs.Any())
+                                    {
+                                        <div class="text-muted small">هیچ پیامی ارسال نشده است.</div>
+                                    }
+                                    else
+                                    {
+                                        <ul class="list-group list-group-flush">
+                                            @foreach (var log in tgLogs)
+                                            {
+                                                <li class="list-group-item">
+                                                    <div class="d-flex justify-content-between">
+                                                        <div>
+                                                            <div class="small text-muted">@log.SentAt.ToString("yyyy/MM/dd HH:mm")</div>
+                                                            <div class="small">Chat: <code>@log.ChatId</code></div>
+                                                        </div>
+                                                        <span class="badge @(log.IsSuccess ? "bg-success" : "bg-danger")">@(log.IsSuccess ? "موفق" : "ناموفق")</span>
+                                                    </div>
+                                                    <div class="mt-2 p-2 bg-light border rounded small" style="max-height: 180px; overflow-y: auto; white-space: pre-wrap;">
+                                                        @log.MessageText
+                                                    </div>
+                                                    @if (!string.IsNullOrEmpty(log.Error))
+                                                    {
+                                                        <div class="text-danger small mt-1">خطا: @log.Error</div>
+                                                    }
+                                                    @if (log.SentBy != null)
+                                                    {
+                                                        <div class="text-muted small">ارسال توسط: @log.SentBy.UserName</div>
+                                                    }
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

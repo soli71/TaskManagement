@@ -1,0 +1,14 @@
+@model TaskManagementMvc.Models.Grade
+@{ ViewData["Title"] = "تعریف گرید"; }
+<h2>تعریف گرید جدید</h2>
+<form asp-action="Create">
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="HourlyRate" class="form-label"></label>
+        <input asp-for="HourlyRate" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-success">ثبت</button>
+</form>

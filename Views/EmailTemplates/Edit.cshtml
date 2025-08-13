@@ -1,0 +1,225 @@
+@model TaskManagementMvc.Models.EmailTemplate
+
+@{
+    ViewData["Title"] = "ویرایش قالب ایمیل";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-pencil-square me-2"></i>
+                        ویرایش قالب ایمیل: @Model.Name
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label fw-semibold">نام قالب <span class="text-danger">*</span></label>
+                                    <input asp-for="Name" class="form-control" placeholder="مثال: قالب فاکتور" />
+                                    <span asp-validation-for="Name" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Subject" class="form-label fw-semibold">موضوع ایمیل <span class="text-danger">*</span></label>
+                                    <input asp-for="Subject" class="form-control" placeholder="مثال: فاکتور شماره {{InvoiceNumber}}" />
+                                    <span asp-validation-for="Subject" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-semibold">توضیحات</label>
+                            <textarea asp-for="Description" class="form-control" rows="2" placeholder="توضیح مختصری درباره این قالب"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Body" class="form-label fw-semibold">متن قالب <span class="text-danger">*</span></label>
+                            <textarea asp-for="Body" class="form-control" rows="12" placeholder="متن قالب ایمیل را اینجا بنویسید..."></textarea>
+                            <span asp-validation-for="Body" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                می‌توانید از متغیرهای زیر استفاده کنید: {{InvoiceNumber}}, {{TotalAmount}}, {{CustomerName}}, {{IssueDate}}, {{TaskList}}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AvailableVariables" class="form-label fw-semibold">متغیرهای قابل استفاده</label>
+                            <input asp-for="AvailableVariables" class="form-control" placeholder="متغیرها را با کاما جدا کنید" />
+                            <span asp-validation-for="AvailableVariables" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                متغیرهایی که در این قالب قابل استفاده هستند را مشخص کنید
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsActive" class="form-check-label fw-semibold">
+                                    این قالب فعال باشد
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-right me-1"></i>بازگشت
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i>ذخیره تغییرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Template Info -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-info bg-opacity-10 text-info">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        اطلاعات قالب
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block mb-2">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                <strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR"))
+                            </small>
+                            @if (Model.UpdatedAt.HasValue)
+                            {
+                                <small class="text-muted d-block mb-2">
+                                    <i class="bi bi-pencil me-1"></i>
+                                    <strong>آخرین ویرایش:</strong> @Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR"))
+                                </small>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrEmpty(Model.UpdatedBy))
+                            {
+                                <small class="text-muted d-block mb-2">
+                                    <i class="bi bi-person me-1"></i>
+                                    <strong>ویرایش شده توسط:</strong> @Model.UpdatedBy
+                                </small>
+                            }
+                            <small class="text-muted d-block">
+                                <i class="bi bi-toggle-on me-1"></i>
+                                <strong>وضعیت:</strong> 
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">غیرفعال</span>
+                                }
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-primary bg-opacity-10 text-primary">
+                    <h6 class="mb-0">
+                        <i class="bi bi-eye me-2"></i>
+                        پیش‌نمایش قالب
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">موضوع:</label>
+                            <div id="liveSubject" class="p-2 bg-light rounded border">@Model.Subject</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">وضعیت:</label>
+                            <div class="p-2">
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">غیرفعال</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">متن:</label>
+                        <div id="liveBody" class="p-3 bg-light rounded border" style="max-height: 300px; overflow-y: auto;">@Html.Raw(Model.Body)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Live preview update
+        const nameInput = document.getElementById('Name');
+        const subjectInput = document.getElementById('Subject');
+        const bodyInput = document.getElementById('Body');
+        const liveSubject = document.getElementById('liveSubject');
+        const liveBody = document.getElementById('liveBody');
+
+        subjectInput.addEventListener('input', function() {
+            liveSubject.textContent = this.value;
+        });
+
+        bodyInput.addEventListener('input', function() {
+            liveBody.innerHTML = this.value;
+        });
+
+        // Auto-resize textarea
+        bodyInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        // Set initial height
+        bodyInput.style.height = bodyInput.scrollHeight + 'px';
+    </script>
+}
+
+<style>
+.form-control:focus {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+.form-label {
+    color: #495057;
+}
+
+.form-text {
+    font-size: 0.875rem;
+}
+
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.badge {
+    font-size: 0.875rem;
+}
+</style>

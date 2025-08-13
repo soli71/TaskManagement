@@ -1,0 +1,38 @@
+@model IEnumerable<TaskManagementMvc.Models.ViewModels.UserListViewModel>
+
+<div class="container">
+    <h2>کاربران</h2>
+    <p>
+        <a asp-action="Create" class="btn btn-primary">ایجاد کاربر</a>
+    </p>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>نام</th>
+                <th>نام کاربری</th>
+                <th>ایمیل</th>
+                <th>وضعیت</th>
+                <th>نقش‌ها</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var u in Model)
+        {
+            <tr>
+                <td>@u.FullName</td>
+                <td>@u.UserName</td>
+                <td>@u.Email</td>
+                <td>@(u.IsActive ? "فعال" : "غیرفعال")</td>
+                <td>@string.Join(", ", u.Roles)</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@u.Id" class="btn btn-sm btn-secondary">جزئیات</a>
+                    <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+

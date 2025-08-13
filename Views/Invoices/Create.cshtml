@@ -1,0 +1,240 @@
+@using TaskManagementMvc.Models
+@{
+    ViewData["Title"] = "صدور صورتحساب";
+    var tasks = (List<TaskItem>)ViewData["Tasks"];
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+                    <h4 class="mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-receipt"></i>
+                        صدور صورتحساب جدید
+                    </h4>
+                    <div class="small text-white-50">
+                        <span>تسک‌های انتخاب‌شده: </span>
+                        <span id="selectedCount" class="fw-bold">0</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post" id="invoiceCreateForm">
+                        <div class="row g-4 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">ایمیل گیرنده</label>
+                                    <input type="email" name="email" class="form-control" required placeholder="example@email.com" />
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">انتخاب تسک‌ها</label>
+                                    <p class="text-muted small">فقط تسک‌هایی که زمان واقعی انجام کار دارند قابل فاکتور هستند.</p>
+                                    
+                                    @if (tasks.Any())
+                                    {
+                                        <div class="list-group" id="taskList">
+                                            @foreach (var t in tasks)
+                                            {
+                                                var hasWorkTime = t.Hours > 0;
+                                                var workTimeText = hasWorkTime ? $"{t.Hours} ساعت" : "زمان انجام کار ثبت نشده";
+                                                var isDisabled = !hasWorkTime;
+                                                
+                                                <label class="list-group-item d-flex align-items-start gap-3 task-item @(isDisabled ? "list-group-item-secondary" : "")" data-task-id="@t.Id" data-task-title="@t.Title">
+                                                    <input type="checkbox" name="taskIds" value="@t.Id" 
+                                                           class="form-check-input mt-1" 
+                                                           @(isDisabled ? "disabled" : "") />
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex justify-content-between align-items-start">
+                                                            <h6 class="mb-1 @(isDisabled ? "text-muted" : "")">@t.Title</h6>
+                                                            <span class="badge @(hasWorkTime ? "bg-success" : "bg-warning") text-dark">
+                                                                @workTimeText
+                                                            </span>
+                                                        </div>
+                                                        <p class="mb-1 small text-muted">@t.Description</p>
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <small class="text-muted">
+                                                                <i class="bi bi-person me-1"></i>
+                                                                @(t.Performer?.Name ?? "تخصیص داده نشده")
+                                                            </small>
+                                                            <small class="text-muted">
+                                                                <i class="bi bi-calendar me-1"></i>
+                                                                @(t.StartAt?.ToString("yyyy/MM/dd", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            هیچ تسک تکمیل شده‌ای برای صدور فاکتور وجود ندارد.
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div id="selectedPanel" class="card border-0 shadow-sm sticky-top" style="top: 16px;">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                        <strong>تسک‌های انتخاب‌شده</strong>
+                                        <span class="badge bg-primary-subtle text-primary" id="selectedPanelCount">0</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="selectedChips" class="d-flex flex-wrap gap-2"></div>
+                                        <div id="selectedEmpty" class="text-muted small">هنوز انتخابی انجام نشده است.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-arrow-right me-1"></i>
+                                بازگشت
+                            </a>
+                            <button type="submit" class="btn btn-primary" @(tasks.Any() ? "" : "disabled")>
+                                <i class="bi bi-check-circle me-1"></i>
+                                صدور فاکتور (ارسال ایمیل بعداً)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.fly-chip {
+    position: fixed;
+    z-index: 9999;
+    padding: .35rem .65rem;
+    border-radius: 999px;
+    background: var(--primary-50);
+    color: var(--primary-700);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: transform 360ms cubic-bezier(.22,1,.36,1), opacity 360ms ease, rotate 360ms ease, scale 360ms ease;
+    rotate: -6deg;
+    scale: 1;
+}
+.selected-chip {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .35rem .6rem; border-radius: 999px;
+    background: var(--primary-50); color: var(--primary-700);
+    border: 1px solid var(--border);
+}
+.selected-chip .btn-close { filter: invert(24%) sepia(94%) saturate(1626%) hue-rotate(227deg) brightness(91%) contrast(90%); opacity: .7; }
+.selected-chip .btn-close:hover { opacity: 1; }
+
+/* Pulse target panel when receiving */
+@@keyframes chipPulse { 0%{box-shadow: 0 0 0 0 rgba(99,102,241,0.0);} 50%{box-shadow: 0 0 0 8px rgba(99,102,241,0.12);} 100%{box-shadow: 0 0 0 0 rgba(99,102,241,0.0);} }
+.pulse-target { animation: chipPulse 420ms ease-out; }
+</style>
+
+<script>
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    const chipsWrap = document.getElementById('selectedChips');
+    const emptyHint = document.getElementById('selectedEmpty');
+    const countTop = document.getElementById('selectedCount');
+    const countPanel = document.getElementById('selectedPanelCount');
+    const panel = document.getElementById('selectedPanel');
+
+    // Track last mouse position
+    const lastMouse = { x: window.innerWidth/2, y: window.innerHeight/2 };
+    document.addEventListener('mousemove', (e)=>{ lastMouse.x = e.clientX; lastMouse.y = e.clientY; }, { passive: true });
+
+    function updateCounts() {
+      const n = chipsWrap.querySelectorAll('.selected-chip').length;
+      countTop.textContent = n;
+      countPanel.textContent = n;
+      emptyHint.style.display = n === 0 ? '' : 'none';
+    }
+
+    function addChip(taskId, title) {
+      const chip = document.createElement('span');
+      chip.className = 'selected-chip';
+      chip.dataset.taskId = taskId;
+      chip.innerHTML = `<i class=\"bi bi-check2-circle\"></i><span>${title}</span><button type=\"button\" class=\"btn-close btn-sm ms-1\" aria-label=\"Remove\"></button>`;
+      chip.querySelector('.btn-close').addEventListener('click', function(){
+        const checkbox = document.querySelector(`input[name=\"taskIds\"][value=\"${taskId}\"]`);
+        if (checkbox) { checkbox.checked = false; }
+        chip.remove();
+        updateCounts();
+      });
+      chipsWrap.appendChild(chip);
+      updateCounts();
+      panel.classList.add('pulse-target');
+      setTimeout(()=>panel.classList.remove('pulse-target'), 420);
+    }
+
+    function removeChip(taskId) {
+      const chip = chipsWrap.querySelector(`.selected-chip[data-task-id=\"${taskId}\"]`);
+      if (chip) { chip.remove(); updateCounts(); }
+    }
+
+    function flyToPanelFromMouse(text, fallbackEl) {
+      const targetRect = chipsWrap.getBoundingClientRect();
+      const origin = { x: lastMouse.x, y: lastMouse.y };
+      if (!Number.isFinite(origin.x) || !Number.isFinite(origin.y)) {
+        const rect = fallbackEl?.getBoundingClientRect();
+        origin.x = rect ? (rect.left + rect.width/2) : window.innerWidth/2;
+        origin.y = rect ? (rect.top + rect.height/2) : window.innerHeight/2;
+      }
+      const fly = document.createElement('div');
+      fly.className = 'fly-chip';
+      fly.textContent = text;
+      document.body.appendChild(fly);
+      fly.style.left = `${origin.x}px`;
+      fly.style.top = `${origin.y}px`;
+      requestAnimationFrame(() => {
+        const dx = (targetRect.left + 12) - origin.x; // slight inset
+        const dy = (targetRect.top + 12) - origin.y;
+        fly.style.transform = `translate(${dx}px, ${dy}px)`;
+        fly.style.opacity = '0.2';
+        fly.style.rotate = '6deg';
+        fly.style.scale = '0.92';
+      });
+      setTimeout(()=> fly.remove(), 420);
+    }
+
+    document.querySelectorAll('input[name="taskIds"]').forEach(cb => {
+      cb.addEventListener('change', function(){
+        const label = this.closest('.task-item');
+        const taskId = label?.dataset?.taskId;
+        const title = label?.dataset?.taskTitle || '';
+        if (!taskId) return;
+        if (this.checked) {
+            flyToPanelFromMouse(title, label);
+            if (!chipsWrap.querySelector(`.selected-chip[data-task-id="${taskId}"]`)) {
+              addChip(taskId, title);
+            }
+        } else {
+            removeChip(taskId);
+        }
+      });
+    });
+
+    updateCounts();
+  });
+})();
+</script>

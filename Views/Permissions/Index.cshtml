@@ -1,0 +1,39 @@
+@model IEnumerable<IGrouping<string, TaskManagementMvc.Models.Permission>>
+
+<div class="container">
+    <h2>دسترسی‌ها</h2>
+    <p>
+        <a asp-action="Create" class="btn btn-primary">ایجاد دسترسی</a>
+    </p>
+
+    @foreach (var group in Model)
+    {
+        <h4 class="mt-4">@group.Key</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>نام</th>
+                    <th>کد</th>
+                    <th>فعال</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var p in group)
+            {
+                <tr>
+                    <td>@p.Name</td>
+                    <td><code>@p.Code</code></td>
+                    <td>@(p.IsActive ? "بله" : "خیر")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-secondary">جزئیات</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
+
+
