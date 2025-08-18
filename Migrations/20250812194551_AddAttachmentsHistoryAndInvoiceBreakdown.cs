@@ -8,6 +8,7 @@ namespace TaskManagementMvc.Migrations
     /// <inheritdoc />
     public partial class AddAttachmentsHistoryAndInvoiceBreakdown : Migration
     {
+        
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
