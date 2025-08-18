@@ -1,32 +1,18 @@
 @model TaskManagementMvc.Models.Company
 
-<div class="container">
-    <h2>ویرایش شرکت</h2>
-    <form asp-action="Edit" method="post">
+<div class="container company-form">
+    <h2 class="mb-4 fw-bold">ویرایش شرکت</h2>
+    <form asp-action="Edit" method="post" class="corp-form corp-three-cols" novalidate>
         <input type="hidden" asp-for="Id" />
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label"></label>
-            <input asp-for="Name" class="form-control" />
-            <span asp-validation-for="Name" class="text-danger"></span>
+        <corp-input dense asp-for="Name" icon="bi-building" placeholder="نام شرکت"></corp-input>
+        <corp-input dense asp-for="Email" type="email" icon="bi-envelope" placeholder="ایمیل سازمانی"></corp-input>
+        <corp-input dense asp-for="Address" icon="bi-geo-alt" placeholder="آدرس"></corp-input>
+        <corp-input dense asp-for="Website" icon="bi-globe" placeholder="وب‌سایت (اختیاری)"></corp-input>
+    <corp-check dense asp-for="IsActive"></corp-check>
+        <div class="d-flex gap-2 mt-2">
+            <corp-btn dense variant="primary" icon="bi-save" type="submit">ذخیره</corp-btn>
+            <corp-btn dense variant="outline" icon="bi-arrow-right" asp-action="Index">بازگشت</corp-btn>
         </div>
-        <div class="mb-3">
-            <label asp-for="Email" class="form-label"></label>
-            <input asp-for="Email" class="form-control" />
-        </div>
-        <div class="mb-3">
-            <label asp-for="Address" class="form-label"></label>
-            <input asp-for="Address" class="form-control" />
-        </div>
-        <div class="mb-3">
-            <label asp-for="Website" class="form-label"></label>
-            <input asp-for="Website" class="form-control" />
-        </div>
-        <div class="form-check mb-3">
-            <input class="form-check-input" asp-for="IsActive" />
-            <label class="form-check-label" asp-for="IsActive"></label>
-        </div>
-        <button type="submit" class="btn btn-primary">ذخیره</button>
-        <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
     </form>
 </div>
 

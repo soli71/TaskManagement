@@ -5,22 +5,28 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagementMvc.Data;
 using TaskManagementMvc.Models;
 using TaskManagementMvc.Models.ViewModels;
+using TaskManagementMvc.Services;
 
 namespace TaskManagementMvc.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = Permissions.ViewCompany)]
     public class CompaniesController : Controller
     {
         private readonly TaskManagementContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IScalableNotificationService _notificationService;
 
-        public CompaniesController(TaskManagementContext context, UserManager<ApplicationUser> userManager)
+        public CompaniesController(
+            TaskManagementContext context, 
+            UserManager<ApplicationUser> userManager,
+            IScalableNotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
         // GET: Companies/Overview (Admin can select a company and see projects and tasks)
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.SystemAdmin)]
         public async Task<IActionResult> Overview(int? companyId)
         {
             var model = new CompanyOverviewViewModel
@@ -49,7 +55,7 @@ namespace TaskManagementMvc.Controllers
         }
 
         // GET: Companies
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.SystemAdmin)]
         public async Task<IActionResult> Index()
         {
             var companies = await _context.Companies
@@ -73,7 +79,6 @@ namespace TaskManagementMvc.Controllers
             var company = await _context.Companies
                 .Include(c => c.Users)
                 .Include(c => c.Projects)
-                .Include(c => c.Performers)
                 .Include(c => c.Grades)
                 .FirstOrDefaultAsync(c => c.Id == user.CompanyId);
 
@@ -86,7 +91,7 @@ namespace TaskManagementMvc.Controllers
         }
 
         // GET: Companies/Details/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.SystemAdmin)]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -97,7 +102,6 @@ namespace TaskManagementMvc.Controllers
             var company = await _context.Companies
                 .Include(c => c.Users)
                 .Include(c => c.Projects)
-                .Include(c => c.Performers)
                 .Include(c => c.Grades)
                 .Include(c => c.Tasks)
                 .Include(c => c.Invoices)
@@ -112,7 +116,7 @@ namespace TaskManagementMvc.Controllers
         }
 
         // GET: Companies/Create
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = Permissions.ManageCompany)]
         public IActionResult Create()
         {
             return View();
@@ -121,26 +125,77 @@ namespace TaskManagementMvc.Controllers
         // POST: Companies/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = Permissions.ManageCompany)]
         public async Task<IActionResult> Create([Bind("Name,Description,Address,Phone,Email,Website,LogoPath")] Company company)
         {
-            if (ModelState.IsValid)
+            try
             {
-                company.CreatedAt = DateTime.Now;
-                company.CreatedBy = User.Identity?.Name;
-                company.IsActive = true;
+                if (ModelState.IsValid)
+                {
+                    company.CreatedAt = DateTime.Now;
+                    company.CreatedBy = User.Identity?.Name;
+                    company.IsActive = true;
 
-                _context.Add(company);
-                await _context.SaveChangesAsync();
+                    _context.Add(company);
+                    await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "شرکت با موفقیت ایجاد شد.";
-                return RedirectToAction(nameof(Index));
+                    TempData["SuccessMessage"] = "شرکت با موفقیت ایجاد شد.";
+                    
+                    // Send success notification
+                    try
+                    {
+                        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            await _notificationService.SendToUserAsync(
+                                userId,
+                                new ScalableNotificationMessage
+                                {
+                                    Type = "success",
+                                    Title = "شرکت جدید ایجاد شد",
+                                    Message = $"شرکت '{company.Name}' با موفقیت ایجاد شد.",
+                                    ActionUrl = Url.Action("Details", new { id = company.Id }),
+                                    ActionText = "مشاهده شرکت"
+                                }
+                            );
+                        }
+                    }
+                    catch { /* Ignore notification errors */ }
+                    
+                    return RedirectToAction(nameof(Index));
+                }
             }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "خطا در ایجاد شرکت: " + ex.Message);
+                
+                // Send error notification
+                try
+                {
+                    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (!string.IsNullOrEmpty(userId))
+                    {
+                        await _notificationService.SendToUserAsync(
+                            userId,
+                            new ScalableNotificationMessage
+                            {
+                                Type = "error",
+                                Title = "خطا در ایجاد شرکت",
+                                Message = $"خطا در ایجاد شرکت '{company.Name}': {ex.Message}",
+                                ActionUrl = Url.Action("Create"),
+                                ActionText = "تلاش مجدد"
+                            }
+                        );
+                    }
+                }
+                catch { /* Ignore notification errors */ }
+            }
+            
             return View(company);
         }
 
         // GET: Companies/Edit/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = Permissions.ManageCompany)]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -160,7 +215,7 @@ namespace TaskManagementMvc.Controllers
         // POST: Companies/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = Permissions.ManageCompany)]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,Address,Phone,Email,Website,LogoPath,IsActive")] Company company)
         {
             if (id != company.Id)
@@ -193,8 +248,29 @@ namespace TaskManagementMvc.Controllers
                     await _context.SaveChangesAsync();
 
                     TempData["SuccessMessage"] = "شرکت با موفقیت به‌روزرسانی شد.";
+                    
+                    // Send success notification
+                    try
+                    {
+                        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            await _notificationService.SendToUserAsync(
+                                userId,
+                                new ScalableNotificationMessage
+                                {
+                                    Type = "success",
+                                    Title = "شرکت به‌روزرسانی شد",
+                                    Message = $"شرکت '{existingCompany.Name}' با موفقیت به‌روزرسانی شد.",
+                                    ActionUrl = Url.Action("Details", new { id = existingCompany.Id }),
+                                    ActionText = "مشاهده شرکت"
+                                }
+                            );
+                        }
+                    }
+                    catch { /* Ignore notification errors */ }
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (DbUpdateConcurrencyException ex)
                 {
                     if (!CompanyExists(company.Id))
                     {
@@ -202,8 +278,56 @@ namespace TaskManagementMvc.Controllers
                     }
                     else
                     {
+                        // Send error notification for concurrency
+                        try
+                        {
+                            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                            if (!string.IsNullOrEmpty(userId))
+                            {
+                                await _notificationService.SendToUserAsync(
+                                    userId,
+                                    new ScalableNotificationMessage
+                                    {
+                                        Type = "error",
+                                        Title = "خطا در به‌روزرسانی شرکت",
+                                        Message = $"خطا در به‌روزرسانی شرکت '{company.Name}': تداخل در به‌روزرسانی.",
+                                        ActionUrl = Url.Action("Edit", new { id = company.Id }),
+                                        ActionText = "تلاش مجدد"
+                                    }
+                                );
+                            }
+                        }
+                        catch { /* Ignore notification errors */ }
+                        
                         throw;
                     }
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "خطا در به‌روزرسانی شرکت: " + ex.Message);
+                    
+                    // Send error notification
+                    try
+                    {
+                        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        if (!string.IsNullOrEmpty(userId))
+                        {
+                            await _notificationService.SendToUserAsync(
+                                userId,
+                                new ScalableNotificationMessage
+                                {
+                                    Type = "error",
+                                    Title = "خطا در به‌روزرسانی شرکت",
+                                    Message = $"خطا در به‌روزرسانی شرکت '{company.Name}': {ex.Message}",
+                                    ActionUrl = Url.Action("Edit", new { id = company.Id }),
+                                    ActionText = "تلاش مجدد"
+                                }
+                            );
+                        }
+                    }
+                    catch { /* Ignore notification errors */ }
+                    
+                    return View(company);
                 }
                 return RedirectToAction(nameof(Index));
             }
@@ -213,7 +337,7 @@ namespace TaskManagementMvc.Controllers
         // POST: Companies/ToggleActive/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.SystemAdmin)]
         public async Task<IActionResult> ToggleActive(int id)
         {
             var company = await _context.Companies.FindAsync(id);
@@ -233,7 +357,7 @@ namespace TaskManagementMvc.Controllers
         }
 
         // GET: Companies/Users/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.SystemAdmin)]
         public async Task<IActionResult> Users(int? id)
         {
             if (id == null)
@@ -256,7 +380,7 @@ namespace TaskManagementMvc.Controllers
         }
 
         // GET: Companies/Projects/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = Roles.SystemAdmin)]
         public async Task<IActionResult> Projects(int? id)
         {
             if (id == null)

@@ -1,27 +1,16 @@
 @model TaskManagementMvc.Models.Company
 
 <div class="container">
-    <h2>ایجاد شرکت</h2>
-    <form asp-action="Create" method="post">
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label"></label>
-            <input asp-for="Name" class="form-control" />
-            <span asp-validation-for="Name" class="text-danger"></span>
+    <h2 class="mb-4 fw-bold">ایجاد شرکت</h2>
+    <form asp-action="Create" method="post" class="corp-form corp-three-cols" novalidate>
+        <corp-input dense asp-for="Name" icon="bi-building" placeholder="نام شرکت"></corp-input>
+        <corp-input dense asp-for="Email" type="email" icon="bi-envelope" placeholder="ایمیل سازمانی"></corp-input>
+        <corp-input dense asp-for="Address" icon="bi-geo-alt" placeholder="آدرس"></corp-input>
+        <corp-input dense asp-for="Website" icon="bi-globe" placeholder="وب‌سایت (اختیاری)"></corp-input>
+        <div class="d-flex gap-2 mt-3">
+            <corp-btn dense variant="primary" icon="bi-check2" type="submit">ثبت</corp-btn>
+            <corp-btn dense variant="outline" icon="bi-x" asp-action="Index">انصراف</corp-btn>
         </div>
-        <div class="mb-3">
-            <label asp-for="Email" class="form-label"></label>
-            <input asp-for="Email" class="form-control" />
-        </div>
-        <div class="mb-3">
-            <label asp-for="Address" class="form-label"></label>
-            <input asp-for="Address" class="form-control" />
-        </div>
-        <div class="mb-3">
-            <label asp-for="Website" class="form-label"></label>
-            <input asp-for="Website" class="form-control" />
-        </div>
-        <button type="submit" class="btn btn-primary">ثبت</button>
-        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
     </form>
 </div>
 

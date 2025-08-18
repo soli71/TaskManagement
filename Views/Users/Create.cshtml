@@ -2,58 +2,85 @@
 
 @{
     var roles = ViewData["Roles"] as List<TaskManagementMvc.Models.ApplicationRole> ?? new();
+    var companies = ViewData["Companies"] as List<TaskManagementMvc.Models.Company> ?? new();
+    var grades = ViewData["Grades"] as List<TaskManagementMvc.Models.Grade> ?? new();
 }
 
 <div class="container">
-    <h2>ایجاد کاربر</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">ایجاد کاربر</h2>
+        <corp-btn asp-action="Index" variant="outline" icon="bi-arrow-right" dense>بازگشت</corp-btn>
+    </div>
     <form asp-action="Create" method="post">
-        <div class="mb-3">
-            <label asp-for="FullName" class="form-label"></label>
-            <input asp-for="FullName" class="form-control" />
-            <span asp-validation-for="FullName" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-4"><corp-input asp-for="FullName" icon="bi-person" required dense placeholder="نام کامل"></corp-input></div>
+            <div class="col-md-4"><corp-input asp-for="UserName" icon="bi-person-badge" required dense placeholder="نام کاربری"></corp-input></div>
+            <div class="col-md-4"><corp-input asp-for="Email" icon="bi-envelope" required dense placeholder="ایمیل"></corp-input></div>
         </div>
-        <div class="mb-3">
-            <label asp-for="UserName" class="form-label"></label>
-            <input asp-for="UserName" class="form-control" />
-            <span asp-validation-for="UserName" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-4"><corp-input asp-for="PhoneNumber" icon="bi-telephone" dense placeholder="شماره تماس"></corp-input></div>
+            <div class="col-md-4"><corp-input asp-for="IbanNumber" icon="bi-bank" dense placeholder="IR..."></corp-input></div>
+            <div class="col-md-4"><corp-input asp-for="CardNumber" icon="bi-credit-card" dense placeholder="1234-1234-1234-1234"></corp-input></div>
         </div>
-        <div class="mb-3">
-            <label asp-for="Email" class="form-label"></label>
-            <input asp-for="Email" class="form-control" />
-            <span asp-validation-for="Email" class="text-danger"></span>
-        </div>
-        <div class="mb-3">
-            <label asp-for="PhoneNumber" class="form-label"></label>
-            <input asp-for="PhoneNumber" class="form-control" />
-        </div>
-        <div class="mb-3">
-            <label asp-for="Password" class="form-label"></label>
-            <input asp-for="Password" class="form-control" />
-            <span asp-validation-for="Password" class="text-danger"></span>
-        </div>
-        <div class="mb-3">
-            <label asp-for="ConfirmPassword" class="form-label"></label>
-            <input asp-for="ConfirmPassword" class="form-control" />
-            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">نقش‌ها</label>
-            <div class="row">
-                @foreach (var r in roles)
-                {
-                    <div class="col-md-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="SelectedRoles" value="@r.Name" id="role_@r.Id" />
-                            <label class="form-check-label" for="role_@r.Id">@r.Name</label>
-                        </div>
-                    </div>
-                }
+        <div class="row">
+            <div class="col-md-4">
+                <corp-select asp-for="CompanyId" placeholder="انتخاب شرکت" icon="bi-building" dense>
+                    <option value="">-- انتخاب شرکت --</option>
+                    @foreach (var c in companies)
+                    {
+                        <option value="@c.Id">@c.Name</option>
+                    }
+                </corp-select>
+            </div>
+            <div class="col-md-4">
+                <corp-select asp-for="GradeId" placeholder="انتخاب رتبه" icon="bi-bar-chart" dense>
+                    <option value="">-- انتخاب رتبه --</option>
+                    @foreach (var g in grades)
+                    {
+                        <option value="@g.Id">@g.Name</option>
+                    }
+                </corp-select>
+            </div>
+            <div class="col-md-4">
+                <corp-check asp-for="IsActive" dense></corp-check>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-6"><corp-input asp-for="Password" icon="bi-key" required dense placeholder="رمز عبور"></corp-input></div>
+            <div class="col-md-6"><corp-input asp-for="ConfirmPassword" icon="bi-shield-lock" required dense placeholder="تکرار رمز عبور"></corp-input></div>
+        </div>
 
-        <button type="submit" class="btn btn-primary">ثبت</button>
-        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+        <h5 class="mt-4 mb-2">نقش‌ها</h5>
+        <div class="row g-2">
+            @foreach (var r in roles)
+            {
+                <div class="col-md-3">
+                    <div class="corp-field mb-2">
+                        <div class="form-check corp-check corp-check-dense">
+                            <input class="form-check-input corp-check-input" type="checkbox" name="SelectedRoles" value="@r.Name" id="role_@r.Id" />
+                            <label class="form-check-label corp-check-label" for="role_@r.Id">@TaskManagementMvc.Models.Roles.GetDisplayName(r.Name!) <small class="text-muted">(سطح @TaskManagementMvc.Models.Roles.GetRoleLevel(r.Name!))</small></label>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        @{
+            var currentUserRole = "";
+            if (User.IsInRole(TaskManagementMvc.Models.Roles.SystemAdmin)) currentUserRole = TaskManagementMvc.Models.Roles.SystemAdmin;
+            else if (User.IsInRole(TaskManagementMvc.Models.Roles.CompanyManager)) currentUserRole = TaskManagementMvc.Models.Roles.CompanyManager;
+            else if (User.IsInRole(TaskManagementMvc.Models.Roles.Employee)) currentUserRole = TaskManagementMvc.Models.Roles.Employee;
+        }
+        @if (!string.IsNullOrEmpty(currentUserRole) && currentUserRole != TaskManagementMvc.Models.Roles.SystemAdmin)
+        {
+            <div class="alert alert-info mt-2 small">
+                توجه: شما به عنوان @TaskManagementMvc.Models.Roles.GetDisplayName(currentUserRole) (سطح @TaskManagementMvc.Models.Roles.GetRoleLevel(currentUserRole)) تنها می‌توانید نقش‌هایی با سطح پایین‌تر از خود تخصیص دهید.
+            </div>
+        }
+
+        <div class="d-flex gap-2 mt-4">
+            <corp-btn variant="success" icon="bi-save" dense>ثبت</corp-btn>
+            <corp-btn asp-action="Index" variant="outline" icon="bi-x" dense>انصراف</corp-btn>
+        </div>
     </form>
 </div>
 

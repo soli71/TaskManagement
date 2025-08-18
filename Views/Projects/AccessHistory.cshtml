@@ -1,0 +1,316 @@
+@model TaskManagementMvc.Models.ViewModels.ProjectAccessListViewModel
+@{
+    ViewData["Title"] = "تاریخچه دسترسی پروژه";
+}
+
+@section Styles {
+    <style>
+        .history-timeline {
+            position: relative;
+            padding-right: 2rem;
+        }
+        
+        .history-timeline::before {
+            content: '';
+            position: absolute;
+            right: 1rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--bs-primary), var(--bs-secondary));
+        }
+        
+        .history-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            background: var(--bs-body-bg);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .history-item.revoked {
+            background: #fff5f5;
+            border-color: #fed7d7;
+        }
+        
+        .history-item.active {
+            background: #f0fff4;
+            border-color: #c6f6d5;
+        }
+        
+        .history-item::before {
+            content: '';
+            position: absolute;
+            right: -2.25rem;
+            top: 1.5rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--bs-primary);
+            border: 3px solid var(--bs-body-bg);
+            z-index: 1;
+        }
+        
+        .history-item.revoked::before {
+            background: var(--bs-danger);
+        }
+        
+        .history-item.active::before {
+            background: var(--bs-success);
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .filter-card {
+            background: var(--bs-light);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Projects")">پروژه‌ها</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("ManageAccess", new { id = Model.ProjectId })">مدیریت دسترسی</a></li>
+                    <li class="breadcrumb-item active">تاریخچه دسترسی‌ها</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-clock-history text-primary me-2"></i>
+                        تاریخچه دسترسی‌ها
+                    </h2>
+                    <p class="text-muted mb-0">@Model.ProjectName</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <corp-btn variant="primary" icon="bi-shield-plus" asp-action="ManageAccess" asp-route-id="@Model.ProjectId" dense>مدیریت دسترسی</corp-btn>
+                    <corp-btn variant="outline" icon="bi-arrow-left" asp-action="Details" asp-route-id="@Model.ProjectId" dense>بازگشت</corp-btn>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="h4 mb-1">@Model.AccessList.Count(a => a.IsActive)</div>
+                <small>دسترسی فعال</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, var(--bs-success), var(--bs-info));">
+                <div class="h4 mb-1">@Model.AccessList.Count</div>
+                <small>کل دسترسی‌ها</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, var(--bs-warning), var(--bs-danger));">
+                <div class="h4 mb-1">@Model.AccessList.Count(a => !a.IsActive)</div>
+                <small>دسترسی لغو شده</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card" style="background: linear-gradient(135deg, var(--bs-info), var(--bs-secondary));">
+                <div class="h4 mb-1">@Model.AccessList.Select(a => a.UserId).Distinct().Count()</div>
+                <small>کاربر منحصر به فرد</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <corp-input asp-for="@(((TaskManagementMvc.Models.ViewModels.ProjectAccessListViewModel)null)!.ProjectName)" placeholder="جستجو در نام کاربر، شرکت یا یادداشت..." icon="bi-search" dense></corp-input>
+                <script>
+                    document.currentScript.previousElementSibling.querySelector('input').id='searchFilter';
+                    document.currentScript.previousElementSibling.querySelector('input').name='searchFilter';
+                </script>
+            </div>
+            <div class="col-md-3">
+                <div class="corp-field mb-0">
+                    <label class="form-label corp-label">وضعیت</label>
+                    <div class="corp-input-raw">
+                        <select class="form-select corp-select" id="statusFilter">
+                            <option value="">همه وضعیت‌ها</option>
+                            <option value="active">فعال</option>
+                            <option value="revoked">لغو شده</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <corp-btn variant="outline" icon="bi-arrow-clockwise" type="button" onclick="clearFilters()" dense>پاک کردن</corp-btn>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Timeline -->
+    @if (Model.AccessList.Any())
+    {
+        <div class="history-timeline">
+            @foreach (var access in Model.AccessList)
+            {
+                <div class="history-item @(access.IsActive ? "active" : "revoked")" 
+                     data-user="@access.UserFullName" 
+                     data-company="@access.UserCompanyName" 
+                     data-notes="@access.Notes"
+                     data-status="@(access.IsActive ? "active" : "revoked")">
+                    
+                    <div class="d-flex align-items-start">
+                        <div class="user-avatar me-3">
+                            @(access.UserFullName?.Substring(0, 1) ?? "?")
+                        </div>
+                        
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="mb-1">@access.UserFullName</h5>
+                                    <p class="text-muted mb-1">@access.UserCompanyName</p>
+                                </div>
+                                <div class="text-start">
+                                    @if (access.IsActive)
+                                    {
+                                        <span class="status-badge bg-success text-white">
+                                            <i class="bi bi-shield-check me-1"></i>
+                                            فعال
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge bg-danger text-white">
+                                            <i class="bi bi-shield-x me-1"></i>
+                                            لغو شده
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        <strong>تاریخ اعطا:</strong> @access.GrantedAt.ToPersianDateTime()
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-person me-1"></i>
+                                        <strong>اعطا شده توسط:</strong> @access.GrantedByName
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(access.Notes))
+                            {
+                                <div class="mt-2 p-2 bg-light rounded">
+                                    <small>
+                                        <i class="bi bi-sticky me-1"></i>
+                                        <strong>یادداشت:</strong> @access.Notes
+                                    </small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-clock-history display-1 text-muted"></i>
+            <h4 class="text-muted mt-3">هیچ سابقه‌ای یافت نشد</h4>
+            <p class="text-muted">هنوز هیچ دسترسی برای این پروژه تعریف نشده است.</p>
+            <a href="@Url.Action("ManageAccess", new { id = Model.ProjectId })" class="btn btn-primary">
+                <i class="bi bi-shield-plus me-1"></i>
+                شروع مدیریت دسترسی
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Search and filter functionality
+            $('#searchFilter, #statusFilter').on('input change', function() {
+                filterHistory();
+            });
+            
+            function filterHistory() {
+                const searchTerm = $('#searchFilter').val().toLowerCase();
+                const statusFilter = $('#statusFilter').val();
+                
+                $('.history-item').each(function() {
+                    const $item = $(this);
+                    const userName = $item.data('Employee').toLowerCase();
+                    const company = $item.data('company').toLowerCase();
+                    const notes = $item.data('notes') ? $item.data('notes').toLowerCase() : '';
+                    const status = $item.data('status');
+                    
+                    const matchesSearch = userName.includes(searchTerm) || 
+                                        company.includes(searchTerm) || 
+                                        notes.includes(searchTerm);
+                    
+                    const matchesStatus = !statusFilter || status === statusFilter;
+                    
+                    if (matchesSearch && matchesStatus) {
+                        $item.show();
+                    } else {
+                        $item.hide();
+                    }
+                });
+            }
+            
+            window.clearFilters = function() {
+                $('#searchFilter').val('');
+                $('#statusFilter').val('');
+                $('.history-item').show();
+            };
+        });
+    </script>
+}

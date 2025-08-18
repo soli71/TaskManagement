@@ -1,0 +1,300 @@
+@model TaskManagementMvc.Models.ViewModels.ManageProjectAccessViewModel
+@{
+    ViewData["Title"] = "مدیریت دسترسی پروژه";
+}
+
+@section Styles {
+    <style>
+        .access-card {
+            border: 1px solid var(--bs-border-color);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            background: var(--bs-body-bg);
+        }
+        
+        .access-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .access-card.inactive {
+            opacity: 0.6;
+            background: var(--bs-gray-100);
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .access-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+        }
+        
+        .grant-access-form {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            color: var(--bs-primary);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .user-select-card {
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .user-select-card:hover {
+            border-color: var(--bs-primary);
+            background: var(--bs-primary-bg-subtle);
+        }
+        
+        .user-select-card.selected {
+            border-color: var(--bs-primary);
+            background: var(--bs-primary-bg-subtle);
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">داشبورد</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index", "Projects")">پروژه‌ها</a></li>
+                    <li class="breadcrumb-item active">مدیریت دسترسی: @Model.ProjectName</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h3 mb-1">
+                        <i class="bi bi-shield-lock text-primary me-2"></i>
+                        مدیریت دسترسی پروژه
+                    </h2>
+                    <p class="text-muted mb-0">@Model.ProjectName</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <corp-btn variant="outline" icon="bi-clock-history" asp-action="AccessHistory" asp-route-id="@Model.ProjectId" dense>تاریخچه</corp-btn>
+                    <corp-btn variant="outline" icon="bi-arrow-left" asp-action="Details" asp-route-id="@Model.ProjectId" dense>بازگشت</corp-btn>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Grant Access Form -->
+        <div class="col-md-6">
+            <div class="grant-access-form">
+                <h4 class="section-title">
+                    <i class="bi bi-person-plus"></i>
+                    اعطای دسترسی جدید
+                </h4>
+                
+                @if (Model.AvailableUsers.Any())
+                {
+                    <form asp-action="GrantAccess" method="post">
+                        <input type="hidden" asp-for="ProjectId" />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">انتخاب کاربران</label>
+                            <div id="user-selection" class="border rounded p-2" style="max-height: 300px; overflow-y: auto;">
+                                @foreach (var user in Model.AvailableUsers)
+                                {
+                                    <div class="user-select-card" data-user-id="@user.Id">
+                                        <div class="d-flex align-items-center">
+                                            <div class="form-check me-3">
+                                                <input class="form-check-input user-checkbox" type="checkbox" 
+                                                       name="SelectedUserIds" value="@user.Id" id="user_@user.Id">
+                                            </div>
+                                            <div class="user-avatar me-3">
+                                                @(user.FullName?.Substring(0, 1) ?? "?")
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">@user.FullName</h6>
+                                                <small class="text-muted">@user.Email</small>
+                                                @if (user.Company != null)
+                                                {
+                                                    <br><small class="text-info">@user.Company.Name</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            <span asp-validation-for="SelectedUserIds" class="text-danger"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label"></label>
+                            <textarea asp-for="Notes" class="form-control" rows="3" 
+                                      placeholder="یادداشت یا توضیحات اضافی..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+                        
+                        <corp-btn variant="primary" icon="bi-shield-check" id="grant-access-btn" type="submit" dense disabled>اعطای دسترسی</corp-btn>
+                    </form>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-people display-4 text-muted"></i>
+                        <p class="text-muted mt-2">همه کاربران مجاز دارای دسترسی به این پروژه هستند.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Current Access List -->
+        <div class="col-md-6">
+            <div class="mb-4">
+                <h4 class="section-title">
+                    <i class="bi bi-people"></i>
+                    کاربران دارای دسترسی
+                    <span class="badge bg-primary ms-2">@Model.CurrentAccess.Count(a => a.IsActive)</span>
+                </h4>
+                
+                @if (Model.CurrentAccess.Any())
+                {
+                    <div style="max-height: 500px; overflow-y: auto;">
+                        @foreach (var access in Model.CurrentAccess.Where(a => a.IsActive))
+                        {
+                            <div class="access-card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-3">
+                                                @(access.UserFullName?.Substring(0, 1) ?? "?")
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1">@access.UserFullName</h6>
+                                                <small class="text-muted">
+                                                    @access.UserCompanyName
+                                                </small>
+                                                <br>
+                                                <small class="text-success">
+                                                    <i class="bi bi-calendar me-1"></i>
+                                                    @access.GrantedAt.ToPersianDate()
+                                                    توسط @access.GrantedByName
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            @if (!access.UserRoles.Contains("CompanyManager"))
+                                            {
+                                                <form asp-action="RevokeAccess" method="post" class="d-inline" 
+                                                      onsubmit="return confirm('آیا از لغو دسترسی این کاربر اطمینان دارید؟')">
+                                                    <input type="hidden" name="id" value="@access.Id" />
+                                                    <corp-btn variant="danger" icon="bi-shield-x" type="submit" dense>لغو</corp-btn>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-shield-lock me-1"></i>
+                                                    مدیر سازمان
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(access.Notes))
+                                    {
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-sticky me-1"></i>
+                                                @access.Notes
+                                            </small>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-shield-exclamation display-4 text-muted"></i>
+                        <p class="text-muted mt-2">هیچ کاربری دسترسی به این پروژه ندارد.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Handle user selection
+            $('.user-select-card').click(function() {
+                const checkbox = $(this).find('.user-checkbox');
+                checkbox.prop('checked', !checkbox.prop('checked'));
+                updateSelection();
+            });
+            
+            $('.user-checkbox').change(function() {
+                updateSelection();
+            });
+            
+            function updateSelection() {
+                const checkedCount = $('.user-checkbox:checked').length;
+                $('#grant-access-btn').prop('disabled', checkedCount === 0);
+                
+                $('.user-select-card').each(function() {
+                    const checkbox = $(this).find('.user-checkbox');
+                    if (checkbox.prop('checked')) {
+                        $(this).addClass('selected');
+                    } else {
+                        $(this).removeClass('selected');
+                    }
+                });
+            }
+            
+            // Initial state
+            updateSelection();
+        });
+    </script>
+}

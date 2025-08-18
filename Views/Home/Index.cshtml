@@ -3,24 +3,52 @@
 }
 
 <!-- Hero Section -->
-<div class="hero-section text-center py-5 mb-5">
-    <div class="container">
+<div class="hero-section text-center py-5 mb-5 position-relative overflow-hidden">
+    <div class="hero-bg-pattern"></div>
+    <div class="container position-relative">
         <div class="row justify-content-center">
             <div class="col-lg-8">
+                <div class="hero-badge mb-4">
+                    <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                        <i class="bi bi-star-fill me-2"></i>محبوب‌ترین سیستم مدیریت تسک
+                    </span>
+                </div>
                 <h1 class="hero-title display-4 fw-bold text-white mb-4">
                     <i class="bi bi-kanban-fill me-3"></i>
                     سیستم مدیریت تسک حرفه‌ای
                 </h1>
                 <p class="hero-subtitle lead text-white-50 mb-4">
-                    مدیریت هوشمند پروژه‌ها، تیم‌ها و وظایف با ابزارهای پیشرفته
+                    مدیریت هوشمند پروژه‌ها، تیم‌ها و وظایف با ابزارهای پیشرفته و رابط کاربری زیبا
                 </p>
                 <div class="hero-buttons">
-                    <a href="#features" class="btn btn-light btn-lg me-3 px-4">
+                    <a href="#features" class="btn btn-light btn-lg me-3 px-4 shadow-sm">
                         <i class="bi bi-play-circle me-2"></i>شروع کنید
                     </a>
                     <a href="#learn-more" class="btn btn-outline-light btn-lg px-4">
                         <i class="bi bi-info-circle me-2"></i>بیشتر بدانید
                     </a>
+                </div>
+                <div class="hero-stats mt-5">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-number-mini text-white fw-bold">10K+</div>
+                                <div class="stat-label-mini text-white-50">کاربر فعال</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-number-mini text-white fw-bold">50K+</div>
+                                <div class="stat-label-mini text-white-50">تسک تکمیل شده</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-number-mini text-white fw-bold">99%</div>
+                                <div class="stat-label-mini text-white-50">رضایت کاربران</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -31,73 +59,101 @@
 <div id="features" class="container mb-5">
     <div class="row text-center mb-5">
         <div class="col-12">
-            <h2 class="section-title display-6 fw-bold text-dark mb-3">ویژگی‌های کلیدی</h2>
-            <p class="section-subtitle lead text-muted">ابزارهای قدرتمند برای مدیریت بهتر پروژه‌ها</p>
+            <div class="section-header">
+                <span class="badge bg-primary-subtle text-primary px-3 py-2 mb-3">ویژگی‌ها</span>
+                <h2 class="section-title display-6 fw-bold text-dark mb-3">ویژگی‌های کلیدی</h2>
+                <p class="section-subtitle lead text-muted">ابزارهای قدرتمند برای مدیریت بهتر پروژه‌ها و افزایش بهره‌وری تیم</p>
+            </div>
         </div>
     </div>
     
     <div class="row g-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="feature-card text-center p-4 h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card text-center p-4 h-100 position-relative">
                 <div class="feature-icon mb-3">
-                    <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+                    <div class="icon-wrapper bg-primary-subtle">
+                        <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+                    </div>
                 </div>
                 <h4 class="feature-title h5 fw-bold mb-3">مدیریت گریدها</h4>
-                <p class="feature-text text-muted">سازماندهی و مدیریت کارآمد گریدهای کاری</p>
+                <p class="feature-text text-muted">سازماندهی و مدیریت کارآمد گریدهای کاری با رابط کاربری بصری</p>
                 <a asp-controller="Grades" asp-action="Index" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-arrow-left me-1"></i>مشاهده
                 </a>
             </div>
         </div>
         
-        <div class="col-lg-3 col-md-6">
-            <div class="feature-card text-center p-4 h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card text-center p-4 h-100 position-relative">
                 <div class="feature-icon mb-3">
-                    <i class="bi bi-people-fill text-success"></i>
+                    <div class="icon-wrapper bg-success-subtle">
+                        <i class="bi bi-people-fill text-success"></i>
+                    </div>
                 </div>
                 <h4 class="feature-title h5 fw-bold mb-3">تیم کاری</h4>
-                <p class="feature-text text-muted">مدیریت اعضای تیم و مسئولیت‌ها</p>
-                <a asp-controller="Performers" asp-action="Index" class="btn btn-outline-success btn-sm">
+                <p class="feature-text text-muted">مدیریت اعضای تیم و مسئولیت‌ها با سیستم نقش‌بندی پیشرفته</p>
+                <a asp-controller="Users" asp-action="Index" class="btn btn-outline-success btn-sm">
                     <i class="bi bi-arrow-left me-1"></i>مشاهده
                 </a>
             </div>
         </div>
         
-        <div class="col-lg-3 col-md-6">
-            <div class="feature-card text-center p-4 h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card text-center p-4 h-100 position-relative">
                 <div class="feature-icon mb-3">
-                    <i class="bi bi-list-task text-warning"></i>
+                    <div class="icon-wrapper bg-warning-subtle">
+                        <i class="bi bi-list-task text-warning"></i>
+                    </div>
                 </div>
                 <h4 class="feature-title h5 fw-bold mb-3">مدیریت تسک‌ها</h4>
-                <p class="feature-text text-muted">پیگیری و مدیریت وظایف پروژه</p>
+                <p class="feature-text text-muted">پیگیری و مدیریت وظایف پروژه با سیستم کانبان پیشرفته</p>
                 <a asp-controller="Tasks" asp-action="Index" class="btn btn-outline-warning btn-sm">
                     <i class="bi bi-arrow-left me-1"></i>مشاهده
                 </a>
             </div>
         </div>
         
-        <div class="col-lg-3 col-md-6">
-            <div class="feature-card text-center p-4 h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card text-center p-4 h-100 position-relative">
                 <div class="feature-icon mb-3">
-                    <i class="bi bi-receipt-cutoff text-info"></i>
+                    <div class="icon-wrapper bg-info-subtle">
+                        <i class="bi bi-receipt-cutoff text-info"></i>
+                    </div>
                 </div>
                 <h4 class="feature-title h5 fw-bold mb-3">صورتحساب‌ها</h4>
-                <p class="feature-text text-muted">مدیریت مالی و گزارش‌گیری</p>
+                <p class="feature-text text-muted">مدیریت مالی و گزارش‌گیری جامع با ابزارهای تحلیلی</p>
                 <a asp-controller="Invoices" asp-action="Index" class="btn btn-outline-info btn-sm">
                     <i class="bi bi-arrow-left me-1"></i>مشاهده
                 </a>
             </div>
         </div>
 
-        <div class="col-lg-3 col-md-6">
-            <div class="feature-card text-center p-4 h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card text-center p-4 h-100 position-relative">
                 <div class="feature-icon mb-3">
-                    <i class="bi bi-building text-danger"></i>
+                    <div class="icon-wrapper bg-danger-subtle">
+                        <i class="bi bi-building text-danger"></i>
+                    </div>
                 </div>
-                <h4 class="feature-title h5 fw-bold mb-3">بورد شرکت‌ها (ادمین)</h4>
-                <p class="feature-text text-muted">انتخاب شرکت و مشاهده پروژه‌ها و تسک‌ها</p>
+                <h4 class="feature-title h5 fw-bold mb-3">بورد شرکت‌ها</h4>
+                <p class="feature-text text-muted">انتخاب شرکت و مشاهده پروژه‌ها و تسک‌ها با داشبورد مدیریتی</p>
                 <a asp-controller="Companies" asp-action="Overview" class="btn btn-outline-danger btn-sm">
                     <i class="bi bi-arrow-left me-1"></i>باز کردن بورد
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="feature-card text-center p-4 h-100 position-relative">
+                <div class="feature-icon mb-3">
+                    <div class="icon-wrapper bg-secondary-subtle">
+                        <i class="bi bi-graph-up text-secondary"></i>
+                    </div>
+                </div>
+                <h4 class="feature-title h5 fw-bold mb-3">گزارش‌گیری</h4>
+                <p class="feature-text text-muted">گزارش‌های تحلیلی و نمودارهای پیشرفته برای تصمیم‌گیری بهتر</p>
+                <a href="#" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>مشاهده
                 </a>
             </div>
         </div>
@@ -110,24 +166,36 @@
         <div class="row text-center">
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="stat-item">
+                    <div class="stat-icon mb-3">
+                        <i class="bi bi-trophy text-warning"></i>
+                    </div>
                     <div class="stat-number display-6 fw-bold text-primary mb-2">150+</div>
                     <div class="stat-label text-muted">پروژه موفق</div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="stat-item">
+                    <div class="stat-icon mb-3">
+                        <i class="bi bi-check-circle text-success"></i>
+                    </div>
                     <div class="stat-number display-6 fw-bold text-success mb-2">500+</div>
                     <div class="stat-label text-muted">تسک تکمیل شده</div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="stat-item">
+                    <div class="stat-icon mb-3">
+                        <i class="bi bi-people text-info"></i>
+                    </div>
                     <div class="stat-number display-6 fw-bold text-warning mb-2">50+</div>
                     <div class="stat-label text-muted">تیم فعال</div>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="stat-item">
+                    <div class="stat-icon mb-3">
+                        <i class="bi bi-heart text-danger"></i>
+                    </div>
                     <div class="stat-number display-6 fw-bold text-info mb-2">99%</div>
                     <div class="stat-label text-muted">رضایت کاربران</div>
                 </div>
@@ -140,18 +208,53 @@
 <div id="learn-more" class="container mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-8 text-center">
-            <div class="cta-card p-5">
-                <h3 class="cta-title h3 fw-bold mb-3">آماده شروع هستید؟</h3>
-                <p class="cta-text text-muted mb-4">
-                    همین امروز سیستم مدیریت تسک خود را راه‌اندازی کنید و بهره‌وری تیم خود را افزایش دهید
-                </p>
-                <div class="cta-buttons">
-                    <a href="#" class="btn btn-primary btn-lg me-3 px-4">
-                        <i class="bi bi-rocket-takeoff me-2"></i>شروع رایگان
-                    </a>
-                    <a href="#" class="btn btn-outline-secondary btn-lg px-4">
-                        <i class="bi bi-question-circle me-2"></i>راهنما
-                    </a>
+            <div class="cta-card p-5 position-relative">
+                <div class="cta-bg-pattern"></div>
+                <div class="position-relative">
+                    <h3 class="cta-title h3 fw-bold mb-3">آماده شروع هستید؟</h3>
+                    <p class="cta-text text-muted mb-4">
+                        همین امروز سیستم مدیریت تسک خود را راه‌اندازی کنید و بهره‌وری تیم خود را افزایش دهید
+                    </p>
+                    <div class="cta-buttons">
+                        <a href="#" class="btn btn-primary btn-lg me-3 px-4 shadow-sm">
+                            <i class="bi bi-rocket-takeoff me-2"></i>شروع رایگان
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="bi bi-question-circle me-2"></i>راهنما
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Features -->
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="info-card p-4 h-100">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="icon-wrapper-sm bg-primary-subtle">
+                        <i class="bi bi-shield-check text-primary"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-2">امنیت بالا</h5>
+                        <p class="text-muted mb-0">داده‌های شما با بالاترین استانداردهای امنیتی محافظت می‌شود</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="info-card p-4 h-100">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="icon-wrapper-sm bg-success-subtle">
+                        <i class="bi bi-phone text-success"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-2">طراحی واکنش‌گرا</h5>
+                        <p class="text-muted mb-0">تجربه کاربری عالی در تمامی دستگاه‌ها و اندازه‌های صفحه</p>
+                    </div>
                 </div>
             </div>
         </div>

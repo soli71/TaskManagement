@@ -72,7 +72,7 @@
                                     <div class="col-6">
                                         <small class="text-muted d-block">
                                             <i class="bi bi-calendar3 me-1"></i>
-                                            ایجاد: @template.CreatedAt.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR"))
+                                            ایجاد: @template.CreatedAt.ToPersianDate()
                                         </small>
                                     </div>
                                     @if (template.UpdatedAt.HasValue)
@@ -80,7 +80,7 @@
                                         <div class="col-6">
                                             <small class="text-muted d-block">
                                                 <i class="bi bi-pencil me-1"></i>
-                                                ویرایش: @template.UpdatedAt.Value.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR"))
+                                                ویرایش: @template.UpdatedAt.Value.ToPersianDate()
                                             </small>
                                         </div>
                                     }

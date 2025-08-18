@@ -15,7 +15,6 @@ namespace TaskManagementMvc.Data
         public DbSet<TaskItem> Tasks { get; set; }
         public DbSet<TaskAttachment> TaskAttachments { get; set; }
         public DbSet<TaskHistory> TaskHistories { get; set; }
-        public DbSet<Performer> Performers { get; set; }
         public DbSet<Grade> Grades { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceLine> InvoiceLines { get; set; }
@@ -27,6 +26,9 @@ namespace TaskManagementMvc.Data
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Company> Companies { get; set; }
         public DbSet<Project> Projects { get; set; }
+        public DbSet<ProjectAccess> ProjectAccess { get; set; }
+    public DbSet<InvoiceSchedule> InvoiceSchedules { get; set; }
+    public DbSet<InvoiceJobRunLog> InvoiceJobRunLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -80,10 +82,17 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.CompanyRole).HasDefaultValue(CompanyRole.User);
+                entity.Property(e => e.IbanNumber).HasMaxLength(26);
+                entity.Property(e => e.CardNumber).HasMaxLength(16);
 
                 entity.HasOne(e => e.Company)
                     .WithMany(e => e.Users)
                     .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(e => e.Grade)
+                    .WithMany()
+                    .HasForeignKey(e => e.GradeId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
@@ -100,7 +109,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.HasOne(e => e.Performer)
-                    .WithMany(e => e.Tasks)
+                    .WithMany(e => e.AssignedTasks)
                     .HasForeignKey(e => e.PerformerId)
                     .OnDelete(DeleteBehavior.SetNull);
 
@@ -117,28 +126,6 @@ namespace TaskManagementMvc.Data
                 entity.HasOne(e => e.Project)
                     .WithMany(e => e.Tasks)
                     .HasForeignKey(e => e.ProjectId)
-                    .OnDelete(DeleteBehavior.SetNull);
-            });
-
-            // Performer configuration
-            modelBuilder.Entity<Performer>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Description).HasMaxLength(500);
-                entity.Property(e => e.Email).HasMaxLength(100);
-                entity.Property(e => e.Phone).HasMaxLength(20);
-                entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                entity.HasOne(e => e.Company)
-                    .WithMany(e => e.Performers)
-                    .HasForeignKey(e => e.CompanyId)
-                    .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasOne(e => e.Grade)
-                    .WithMany()
-                    .HasForeignKey(e => e.GradeId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
@@ -367,6 +354,75 @@ namespace TaskManagementMvc.Data
                 entity.HasOne(e => e.AssignedBy)
                     .WithMany()
                     .HasForeignKey(e => e.AssignedById)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ProjectAccess configuration
+            modelBuilder.Entity<ProjectAccess>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.ProjectId, e.UserId }).IsUnique();
+                entity.Property(e => e.GrantedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.Notes).HasMaxLength(500);
+                entity.Property(e => e.Reason).HasMaxLength(500);
+                entity.Property(e => e.RevokeReason).HasMaxLength(500);
+
+                entity.HasOne(e => e.Project)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.GrantedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.GrantedById)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(e => e.RevokedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.RevokedById)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // InvoiceSchedule configuration
+            modelBuilder.Entity<InvoiceSchedule>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.RecipientEmails).HasMaxLength(1000);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.HourOfDay).HasDefaultValue(6);
+                entity.Property(e => e.NextRunAt).HasColumnType("datetime");
+                entity.Property(e => e.LastRunAt).HasColumnType("datetime");
+
+                entity.HasOne(e => e.Company)
+                    .WithMany()
+                    .HasForeignKey(e => e.CompanyId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // InvoiceJobRunLog configuration
+            modelBuilder.Entity<InvoiceJobRunLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Error).HasMaxLength(1000);
+                entity.Property(e => e.RunStartedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.RunCompletedAt).HasColumnType("datetime");
+
+                entity.HasOne(e => e.Schedule)
+                    .WithMany(e => e.RunLogs)
+                    .HasForeignKey(e => e.ScheduleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Invoice)
+                    .WithMany()
+                    .HasForeignKey(e => e.InvoiceId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
         }

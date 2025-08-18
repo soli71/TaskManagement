@@ -95,13 +95,13 @@
                         <div class="col-md-6">
                             <small class="text-muted d-block mb-2">
                                 <i class="bi bi-calendar3 me-1"></i>
-                                <strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR"))
+                                <strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToPersianDateTime()
                             </small>
                             @if (Model.UpdatedAt.HasValue)
                             {
                                 <small class="text-muted d-block mb-2">
                                     <i class="bi bi-pencil me-1"></i>
-                                    <strong>آخرین ویرایش:</strong> @Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR"))
+                                    <strong>آخرین ویرایش:</strong> @Model.UpdatedAt.Value.ToPersianDateTime()
                                 </small>
                             }
                         </div>

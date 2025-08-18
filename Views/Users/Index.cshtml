@@ -1,38 +1,42 @@
 @model IEnumerable<TaskManagementMvc.Models.ViewModels.UserListViewModel>
 
 <div class="container">
-    <h2>کاربران</h2>
-    <p>
-        <a asp-action="Create" class="btn btn-primary">ایجاد کاربر</a>
-    </p>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>نام</th>
-                <th>نام کاربری</th>
-                <th>ایمیل</th>
-                <th>وضعیت</th>
-                <th>نقش‌ها</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">کاربران</h2>
+        <corp-btn asp-action="Create" icon="bi-person-plus" dense>ایجاد کاربر</corp-btn>
+    </div>
+    <corp-table headers="نام,نام کاربری,ایمیل,شرکت,وضعیت,نقش‌ها,عملیات" striped hover dense>
         @foreach (var u in Model)
         {
             <tr>
                 <td>@u.FullName</td>
                 <td>@u.UserName</td>
                 <td>@u.Email</td>
-                <td>@(u.IsActive ? "فعال" : "غیرفعال")</td>
-                <td>@string.Join(", ", u.Roles)</td>
+                <td>@(u.CompanyName ?? "نامشخص")</td>
                 <td>
-                    <a asp-action="Details" asp-route-id="@u.Id" class="btn btn-sm btn-secondary">جزئیات</a>
-                    <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                    @if (u.IsActive)
+                    {
+                        <corp-badge variant="success" icon="bi-check-circle" dense>فعال</corp-badge>
+                    }
+                    else
+                    {
+                        <corp-badge variant="secondary" icon="bi-x-circle" dense>غیرفعال</corp-badge>
+                    }
+                </td>
+                <td>
+                    @foreach (var r in u.Roles)
+                    {
+                        <corp-badge variant="info" dense>@r</corp-badge>
+                    }
+                </td>
+                <td class="text-nowrap">
+                    <corp-btn asp-action="Details" asp-route-id="@u.Id" variant="secondary" icon="bi-eye" dense></corp-btn>
+                    <corp-btn asp-action="Edit" asp-route-id="@u.Id" variant="outline" icon="bi-pencil" dense></corp-btn>
+                    <corp-btn asp-action="ProjectAccess" asp-route-id="@u.Id" variant="info" icon="bi-shield-check" dense></corp-btn>
                 </td>
             </tr>
         }
-        </tbody>
-    </table>
+    </corp-table>
 </div>
 
 

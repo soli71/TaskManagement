@@ -23,8 +23,8 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-2"><strong>شماره تلفن:</strong> @(Model.PhoneNumber ?? "-")</div>
-                            <div class="mb-2"><strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
-                            <div class="mb-2"><strong>آخرین ورود:</strong> @(Model.LastLoginAt?.ToString("yyyy/MM/dd HH:mm") ?? "-")</div>
+                            <div class="mb-2"><strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToPersianDateTime()</div>
+                            <div class="mb-2"><strong>آخرین ورود:</strong> @(Model.LastLoginAt?.ToPersianDateTime() ?? "-")</div>
                         </div>
                     </div>
                     <div class="mb-3">

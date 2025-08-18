@@ -12,16 +12,20 @@
         <dd class="col-sm-10">@Model.Description</dd>
     </dl>
 
-    <p>
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">ویرایش</a>
-        <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+    <p class="d-flex gap-2">
+        <corp-btn variant="outline" icon="bi-arrow-right" asp-action="Index">بازگشت</corp-btn>
+        <corp-btn variant="primary" icon="bi-pencil" asp-action="Edit" asp-route-id="@Model.Id">ویرایش</corp-btn>
+        @if (Model.IsActive)
+        {<corp-badge variant="success" dense icon="bi-check2">فعال</corp-badge>}
+        else
+        {<corp-badge variant="danger" dense icon="bi-x">غیرفعال</corp-badge>}
     </p>
 
     <h4 class="mt-4">پروژه‌ها</h4>
     <ul>
         @foreach (var p in Model.Projects)
         {
-            <li><a asp-controller="Projects" asp-action="Details" asp-route-id="@p.Id">@p.Name</a></li>
+            <li><a asp-controller="Projects" asp-action="Edit" asp-route-id="@p.Id">@p.Name</a></li>
         }
     </ul>
 </div>

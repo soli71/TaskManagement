@@ -1,9 +1,19 @@
 @model TaskManagementMvc.Models.Grade
 @{ ViewData["Title"] = "حذف گرید"; }
-<h2>حذف گرید</h2>
-<div><strong>@Model.Name</strong> - نرخ: @Model.HourlyRate</div>
-<form asp-action="DeleteConfirmed">
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">حذف گرید</h2>
+    <corp-btn asp-action="Index" variant="outline" icon="bi-arrow-right" dense>بازگشت</corp-btn>
+</div>
+<div class="mb-3">
+    <p class="mb-1">آیا از حذف گرید زیر مطمئن هستید؟</p>
+    <corp-badge variant="danger" dense pill icon="bi-exclamation-triangle-fill">@Model.Name</corp-badge>
+    <span class="ms-2">نرخ: <corp-badge variant="info" dense>@Model.HourlyRate</corp-badge></span>
+</div>
+<form asp-action="DeleteConfirmed" method="post" onsubmit="return confirm('حذف انجام شود؟');">
     <input type="hidden" asp-for="Id" />
-    <button type="submit" class="btn btn-danger">حذف</button>
-    <a class="btn btn-secondary" asp-action="Index">انصراف</a>
+    <div class="d-flex gap-2">
+        <corp-btn variant="danger" icon="bi-trash" dense>حذف</corp-btn>
+        <corp-btn asp-action="Index" variant="outline" icon="bi-x" dense>انصراف</corp-btn>
+    </div>
 </form>

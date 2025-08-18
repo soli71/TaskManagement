@@ -1,0 +1,136 @@
+@{
+    var project = ViewData["Project"] as TaskManagementMvc.Models.Project;
+    var currentAccess = ViewData["CurrentAccess"] as List<TaskManagementMvc.Models.ProjectAccess> ?? new();
+    var availableUsers = ViewData["AvailableUsers"] as List<TaskManagementMvc.Models.ApplicationUser> ?? new();
+}
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">مدیریت دسترسی پروژه: @project?.Name</h2>
+        <div class="d-flex gap-2">
+            <corp-btn variant="outline" icon="bi-pencil" asp-controller="Projects" asp-action="Edit" asp-route-id="@project?.Id" dense>ویرایش</corp-btn>
+            <corp-btn variant="outline" icon="bi-arrow-left" asp-controller="Projects" asp-action="Index" dense>بازگشت</corp-btn>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Current Access -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">کاربران دارای دسترسی</h5>
+                </div>
+                <div class="card-body">
+                    @if (currentAccess.Any())
+                    {
+                        <corp-table headers="نام کاربر,تاریخ اعطا,اعطا شده توسط,عملیات" small hover dense>
+                            @foreach (var access in currentAccess)
+                            {
+                                <tr>
+                                    <td>@access.User.FullName</td>
+                                    <td>@access.GrantedAt.ToLocalTime().ToPersianDate()</td>
+                                    <td>@(access.GrantedBy?.FullName ?? "نامشخص")</td>
+                                    <td>
+                                        <corp-btn variant="danger" icon="bi-shield-x" type="button" dense onclick="revokeAccess(@project.Id, @access.UserId)">لغو</corp-btn>
+                                    </td>
+                                </tr>
+                            }
+                        </corp-table>
+                    }
+                    else
+                    {
+                        <p class="text-muted">هیچ کاربری دسترسی ندارد.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Grant Access -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">اعطای دسترسی جدید</h5>
+                </div>
+                <div class="card-body">
+                    <form id="grantAccessForm">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label corp-label">انتخاب کاربر</label>
+                            <div class="corp-input-raw">
+                                <select id="userId" class="form-select corp-select" required>
+                                    <option value="">-- انتخاب کاربر --</option>
+                                    @foreach (var user in availableUsers.Where(u => !currentAccess.Any(ca => ca.UserId == u.Id)))
+                                    {
+                                        <option value="@user.Id">@user.FullName (@user.UserName)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label corp-label">یادداشت (اختیاری)</label>
+                            <textarea id="notes" class="form-control corp-input" rows="2" placeholder="دلیل اعطای دسترسی..."></textarea>
+                        </div>
+                        <corp-btn variant="primary" icon="bi-plus-lg" type="submit" dense>اعطا</corp-btn>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#grantAccessForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const userId = $('#userId').val();
+                const notes = $('#notes').val();
+                
+                if (!userId) {
+                    alert('لطفاً کاربر را انتخاب کنید.');
+                    return;
+                }
+                
+                $.post('@Url.Action("GrantAccess", "Projects", new { projectId = project?.Id })', {
+                    projectId: @project?.Id,
+                    userId: userId,
+                    notes: notes,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                })
+                .done(function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('خطا در اعطای دسترسی.');
+                });
+            });
+        });
+        
+        function revokeAccess(projectId, userId) {
+            if (confirm('آیا از لغو دسترسی این کاربر مطمئن هستید؟')) {
+                $.post('@Url.Action("RevokeAccess", "Projects")', {
+                    projectId: projectId,
+                    userId: userId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                })
+                .done(function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('خطا در لغو دسترسی.');
+                });
+            }
+        }
+    </script>
+}

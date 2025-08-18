@@ -6,30 +6,50 @@ using System.Security.Claims;
 using TaskManagementMvc.Data;
 using TaskManagementMvc.Models;
 using TaskManagementMvc.Models.ViewModels;
+using TaskManagementMvc.Services;
 
 namespace TaskManagementMvc.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.ViewUsers)]
     public class UsersController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly TaskManagementContext _context;
+        private readonly ProjectAccessService _projectAccessService;
+        private readonly IScalableNotificationService _notificationService;
 
         public UsersController(
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
-            TaskManagementContext context)
+            TaskManagementContext context,
+            ProjectAccessService projectAccessService,
+            IScalableNotificationService notificationService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
+            _projectAccessService = projectAccessService;
+            _notificationService = notificationService;
         }
 
         public async Task<IActionResult> Index()
         {
-            var users = await _userManager.Users
-                .Where(u => u.IsActive)
+            var currentUser = await _userManager.GetUserAsync(User);
+            
+            IQueryable<ApplicationUser> usersQuery = _userManager.Users.Where(u => u.IsActive).Include(u => u.Company);
+            
+            // If not admin, show only company users
+            if (!User.IsInRole(Roles.SystemAdmin))
+            {
+                if (currentUser?.CompanyId == null)
+                {
+                    return Forbid();
+                }
+                usersQuery = usersQuery.Where(u => u.CompanyId == currentUser.CompanyId);
+            }
+
+            var users = await usersQuery
                 .Select(u => new UserListViewModel
                 {
                     Id = u.Id,
@@ -37,6 +57,7 @@ namespace TaskManagementMvc.Controllers
                     UserName = u.UserName,
                     Email = u.Email,
                     PhoneNumber = u.PhoneNumber,
+                    CompanyName = u.Company != null ? u.Company.Name : null,
                     IsActive = u.IsActive,
                     Roles = _userManager.GetRolesAsync(u).Result.ToList()
                 })
@@ -46,22 +67,88 @@ namespace TaskManagementMvc.Controllers
             return View(users);
         }
 
+        [Authorize(Policy = Permissions.CreateUsers)]
         public async Task<IActionResult> Create()
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+            
+            // Check if user can create users
+            if (!User.IsInRole(Roles.SystemAdmin) && !User.IsInRole(Roles.CompanyManager))
+            {
+                return Forbid();
+            }
+
             var roles = await _roleManager.Roles
                 .Where(r => r.IsActive)
                 .OrderBy(r => r.Name)
                 .ToListAsync();
 
+            // Filter roles based on user's level
+            var currentUserRole = GetCurrentUserHighestRole();
+            var assignableRoles = Roles.GetAssignableRoles(currentUserRole);
+            roles = roles.Where(r => assignableRoles.Contains(r.Name!)).ToList();
+
             ViewData["Roles"] = roles;
-            return View(new CreateUserViewModel());
+            
+            // Get companies for selection
+            if (User.IsInRole(Roles.SystemAdmin))
+            {
+                var companies = await _context.Companies
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+                ViewData["Companies"] = companies;
+            }
+            else
+            {
+                // For managers, set their company only
+                ViewData["Companies"] = new List<Company>();
+                if (currentUser?.CompanyId != null)
+                {
+                    var userCompany = await _context.Companies.FindAsync(currentUser.CompanyId);
+                    if (userCompany != null)
+                    {
+                        ViewData["Companies"] = new List<Company> { userCompany };
+                    }
+                }
+            }
+
+            var model = new CreateUserViewModel();
+            if (!User.IsInRole(Roles.SystemAdmin) && !User.IsInRole("SystemManager"))
+            {
+                model.CompanyId = currentUser?.CompanyId;
+            }
+
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.CreateUsers)]
         public async Task<IActionResult> Create(CreateUserViewModel model)
         {
-            if (ModelState.IsValid)
+            try
+            {
+                var currentUser = await _userManager.GetUserAsync(User);
+                
+                // Check if user can create users
+                if (!User.IsInRole(Roles.SystemAdmin) && !User.IsInRole(Roles.CompanyManager))
+                {
+                    return Forbid();
+                }
+
+                // Ensure managers can only create users for their own company
+                if (!User.IsInRole(Roles.SystemAdmin))
+                {
+                    if (currentUser?.CompanyId == null || model.CompanyId != currentUser.CompanyId)
+                    {
+                        ModelState.AddModelError("", "شما فقط می‌توانید برای سازمان خود کاربر ایجاد کنید.");
+                        await LoadCreateViewData(currentUser);
+                        return View(model);
+                    }
+                }
+
+                if (ModelState.IsValid)
             {
                 var user = new ApplicationUser
                 {
@@ -70,6 +157,10 @@ namespace TaskManagementMvc.Controllers
                     FullName = model.FullName,
                     PhoneNumber = model.PhoneNumber,
                     Notes = model.Notes,
+                    CompanyId = model.CompanyId,
+                    GradeId = model.GradeId,
+                    IbanNumber = model.IbanNumber,
+                    CardNumber = model.CardNumber,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -78,6 +169,19 @@ namespace TaskManagementMvc.Controllers
 
                 if (result.Succeeded)
                 {
+                    // Validate role assignments based on user's level
+                    if (model.SelectedRoles.Any())
+                    {
+                        var currentUserRole = GetCurrentUserHighestRole();
+                        var forbiddenRoles = model.SelectedRoles.Where(r => !Roles.CanAssignRole(currentUserRole, r)).ToList();
+                        if (forbiddenRoles.Any())
+                        {
+                            ModelState.AddModelError("", $"شما اجازه تخصیص نقش‌های {string.Join(", ", forbiddenRoles)} را ندارید.");
+                            await LoadCreateViewData(currentUser);
+                            return View(model);
+                        }
+                    }
+
                     // Assign roles
                     if (model.SelectedRoles.Any())
                     {
@@ -109,9 +213,40 @@ namespace TaskManagementMvc.Controllers
                             });
                         }
                         await _context.SaveChangesAsync();
+
+                        // اگر نقش Manager اضافه شده، دسترسی به تمام پروژه‌های شرکت بده
+                        if (model.SelectedRoles.Contains("CompanyManager") && user.CompanyId.HasValue)
+                        {
+                            await _projectAccessService.GrantAllCompanyProjectsAccessToManager(
+                                user.Id, 
+                                user.CompanyId.Value, 
+                                assignedById
+                            );
+                        }
                     }
 
                     TempData["SuccessMessage"] = "کاربر با موفقیت ایجاد شد.";
+                    
+                    // Send success notification
+                    try
+                    {
+                        var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        if (!string.IsNullOrEmpty(currentUserId))
+                        {
+                            await _notificationService.SendToUserAsync(
+                                currentUserId,
+                                new ScalableNotificationMessage
+                                {
+                                    Type = "success",
+                                    Title = "کاربر جدید ایجاد شد",
+                                    Message = $"کاربر '{user.FullName}' با موفقیت ایجاد شد.",
+                                    ActionUrl = Url.Action("Details", new { id = user.Id }),
+                                    ActionText = "مشاهده کاربر"
+                                }
+                            );
+                        }
+                    }
+                    catch { /* Ignore notification errors */ }
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -121,15 +256,40 @@ namespace TaskManagementMvc.Controllers
                 }
             }
 
-            var roles = await _roleManager.Roles
-                .Where(r => r.IsActive)
-                .OrderBy(r => r.Name)
-                .ToListAsync();
-
-            ViewData["Roles"] = roles;
+            await LoadCreateViewData(currentUser);
             return View(model);
         }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", "خطا در ایجاد کاربر: " + ex.Message);
+            
+            // Send error notification
+            try
+            {
+                var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(currentUserId))
+                {
+                    await _notificationService.SendToUserAsync(
+                        currentUserId,
+                        new ScalableNotificationMessage
+                        {
+                            Type = "error",
+                            Title = "خطا در ایجاد کاربر",
+                            Message = $"خطا در ایجاد کاربر '{model.FullName}': {ex.Message}",
+                            ActionUrl = Url.Action("Create"),
+                            ActionText = "تلاش مجدد"
+                        }
+                    );
+                }
+            }
+            catch { /* Ignore notification errors */ }
+            
+            await LoadCreateViewData(await _userManager.GetUserAsync(User));
+            return View(model);
+        }
+    }
 
+        [Authorize(Policy = Permissions.EditUsers)]
         public async Task<IActionResult> Edit(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
@@ -144,12 +304,17 @@ namespace TaskManagementMvc.Controllers
                 .OrderBy(r => r.Name)
                 .ToListAsync();
 
+            // Filter roles based on user's level
+            var currentUserRole = GetCurrentUserHighestRole();
+            var assignableRoles = Roles.GetAssignableRoles(currentUserRole);
+            allRoles = allRoles.Where(r => assignableRoles.Contains(r.Name!)).ToList();
+
             var currentRoles = await _context.UserRoles
                 .Where(ur => ur.UserId == id && ur.IsActive)
                 .Include(ur => ur.Role)
                 .Select(ur => new UserRoleViewModel
                 {
-                    RoleId = ur.RoleId.ToString(),
+                    RoleId = ur.RoleId,
                     RoleName = ur.Role.Name!,
                     Description = ur.Role.Description ?? string.Empty,
                     AssignedAt = ur.AssignedAt,
@@ -160,32 +325,62 @@ namespace TaskManagementMvc.Controllers
 
             var model = new EditUserViewModel
             {
-                Id = user.Id.ToString(),
+                Id = user.Id,
                 FullName = user.FullName,
                 UserName = user.UserName,
                 Email = user.Email,
                 PhoneNumber = user.PhoneNumber,
                 IsActive = user.IsActive,
                 Notes = user.Notes,
+                CompanyId = user.CompanyId,
+                GradeId = user.GradeId,
+                IbanNumber = user.IbanNumber,
+                CardNumber = user.CardNumber,
                 SelectedRoles = userRoles.ToList(),
                 CurrentRoles = currentRoles
             };
 
-            ViewData["Roles"] = allRoles;
+            // Load dropdown data into ViewModel
+            await LoadEditViewData(model);
+            
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.EditUsers)]
         public async Task<IActionResult> Edit(int id, EditUserViewModel model)
         {
-            if (id.ToString() != model.Id)
+            if (id != model.Id)
             {
                 return NotFound();
             }
 
             if (ModelState.IsValid)
             {
+                var currentUserId = int.Parse(User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+                
+                // Prevent managers from editing their own roles
+                if (!User.IsInRole(Roles.SystemAdmin) && model.Id == currentUserId)
+                {
+                    ModelState.AddModelError("", "شما نمی‌توانید نقش‌های خود را تغییر دهید.");
+                    await LoadEditViewData(model);
+                    return View(model);
+                }
+
+                // Validate role assignments based on user's level
+                if (model.SelectedRoles.Any())
+                {
+                    var currentUserRole = GetCurrentUserHighestRole();
+                    var forbiddenRoles = model.SelectedRoles.Where(r => !Roles.CanAssignRole(currentUserRole, r)).ToList();
+                    if (forbiddenRoles.Any())
+                    {
+                        ModelState.AddModelError("", $"شما اجازه تخصیص نقش‌های {string.Join(", ", forbiddenRoles)} را ندارید.");
+                        await LoadEditViewData(model);
+                        return View(model);
+                    }
+                }
+
                 var user = await _userManager.FindByIdAsync(id.ToString());
                 if (user == null)
                 {
@@ -198,6 +393,10 @@ namespace TaskManagementMvc.Controllers
                 user.PhoneNumber = model.PhoneNumber;
                 user.IsActive = model.IsActive;
                 user.Notes = model.Notes;
+                user.CompanyId = model.CompanyId;
+                user.GradeId = model.GradeId;
+                user.IbanNumber = model.IbanNumber;
+                user.CardNumber = model.CardNumber;
 
                 var result = await _userManager.UpdateAsync(user);
 
@@ -224,6 +423,17 @@ namespace TaskManagementMvc.Controllers
                             }
                         }
                         await _context.SaveChangesAsync();
+
+                        // اگر نقش Manager حذف شده، دسترسی‌های پروژه را حذف کن
+                        if (rolesToRemove.Contains("CompanyManager") && user.CompanyId.HasValue)
+                        {
+                            var executorUserId = int.Parse(User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+                            await _projectAccessService.RevokeAllCompanyProjectsAccessFromUser(
+                                user.Id, 
+                                user.CompanyId.Value, 
+                                executorUserId
+                            );
+                        }
                     }
 
                     if (rolesToAdd.Any())
@@ -245,6 +455,16 @@ namespace TaskManagementMvc.Controllers
                             });
                         }
                         await _context.SaveChangesAsync();
+
+                        // اگر نقش Manager اضافه شده، دسترسی به تمام پروژه‌های شرکت بده
+                        if (rolesToAdd.Contains("CompanyManager") && user.CompanyId.HasValue)
+                        {
+                            await _projectAccessService.GrantAllCompanyProjectsAccessToManager(
+                                user.Id, 
+                                user.CompanyId.Value, 
+                                assignedById2
+                            );
+                        }
                     }
 
                     TempData["SuccessMessage"] = "کاربر با موفقیت ویرایش شد.";
@@ -257,17 +477,14 @@ namespace TaskManagementMvc.Controllers
                 }
             }
 
-            var allRoles = await _roleManager.Roles
-                .Where(r => r.IsActive)
-                .OrderBy(r => r.Name)
-                .ToListAsync();
-
-            ViewData["Roles"] = allRoles;
+            // Re-populate the ViewModel data properly
+            await LoadEditViewData(model);
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.DeleteUsers)]
         public async Task<IActionResult> Delete(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
@@ -378,6 +595,139 @@ namespace TaskManagementMvc.Controllers
 
             ViewData["UserRoles"] = roles;
             return View(user);
+        }
+
+        // GET: Users/ProjectAccess/5
+        public async Task<IActionResult> ProjectAccess(int id)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var projectAccess = await _context.ProjectAccess
+                .Where(pa => pa.UserId == id)
+                .Include(pa => pa.Project)
+                .ThenInclude(p => p.Company)
+                .Include(pa => pa.GrantedBy)
+                .OrderByDescending(pa => pa.GrantedAt)
+                .ToListAsync();
+
+            ViewData["UserName"] = user.FullName;
+            return View(projectAccess);
+        }
+
+        private async Task LoadCreateViewData(ApplicationUser? currentUser)
+        {
+            var roles = await _roleManager.Roles
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+
+            // Filter roles based on user's level
+            var currentUserRole = GetCurrentUserHighestRole();
+            var assignableRoles = Roles.GetAssignableRoles(currentUserRole);
+            roles = roles.Where(r => assignableRoles.Contains(r.Name!)).ToList();
+
+            ViewData["Roles"] = roles;
+            
+            // Get grades for selection
+            var grades = await _context.Grades
+                .Where(g => g.IsActive)
+                .OrderBy(g => g.Name)
+                .ToListAsync();
+            ViewData["Grades"] = grades;
+            
+            // Get companies for selection
+            if (User.IsInRole(Roles.SystemAdmin))
+            {
+                var companies = await _context.Companies
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+                ViewData["Companies"] = companies;
+            }
+            else
+            {
+                // For managers, set their company only
+                ViewData["Companies"] = new List<Company>();
+                if (currentUser?.CompanyId != null)
+                {
+                    var userCompany = await _context.Companies.FindAsync(currentUser.CompanyId);
+                    if (userCompany != null)
+                    {
+                        ViewData["Companies"] = new List<Company> { userCompany };
+                    }
+                }
+            }
+        }
+
+        private async Task LoadEditViewData(EditUserViewModel model)
+        {
+            var roles = await _roleManager.Roles
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+
+            // Filter roles based on user's level
+            var currentUserRole = GetCurrentUserHighestRole();
+            var assignableRoles = Roles.GetAssignableRoles(currentUserRole);
+            model.Roles = roles.Where(r => assignableRoles.Contains(r.Name!)).ToList();
+            
+            // Get companies for admin selection
+            model.Companies = await _context.Companies
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            
+            // Get grades for selection
+            model.Grades = await _context.Grades
+                .Where(g => g.IsActive)
+                .OrderBy(g => g.Name)
+                .ToListAsync();
+        }
+
+        private async Task LoadEditViewData(int userId)
+        {
+            var roles = await _roleManager.Roles
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+
+            // Filter roles based on user's level
+            var currentUserRole = GetCurrentUserHighestRole();
+            var assignableRoles = Roles.GetAssignableRoles(currentUserRole);
+            roles = roles.Where(r => assignableRoles.Contains(r.Name!)).ToList();
+
+            ViewData["Roles"] = roles;
+            
+            // Get companies for admin selection
+            var companies = await _context.Companies
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            ViewData["Companies"] = companies;
+            
+            // Get grades for selection
+            var grades = await _context.Grades
+                .Where(g => g.IsActive)
+                .OrderBy(g => g.Name)
+                .ToListAsync();
+            ViewData["Grades"] = grades;
+        }
+
+        /// <summary>
+        /// Get the highest role of the current user
+        /// </summary>
+        /// <returns>The highest role name</returns>
+        private string GetCurrentUserHighestRole()
+        {
+            if (User.IsInRole(Roles.SystemAdmin)) return Roles.SystemAdmin;
+            if (User.IsInRole(Roles.CompanyManager)) return Roles.CompanyManager;
+            if (User.IsInRole(Roles.ProjectManager)) return Roles.ProjectManager;
+            if (User.IsInRole(Roles.Employee)) return Roles.Employee;
+            return string.Empty;
         }
     }
 }

@@ -1,54 +1,62 @@
 @model TaskFormViewModel
-@{ ViewData["Title"] = "تعریف تسک"; }
-<h2>تعریف تسک</h2>
-<form asp-action="Create">
-    <div class="mb-3">
-        <label asp-for="Title" class="form-label"></label>
-        <input asp-for="Title" class="form-control" />
+
+<form asp-action="Create" enctype="multipart/form-data" class="needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+
+    <div class="d-flex align-items-center mb-3">
+        <i class="bi bi-plus-circle text-primary fs-4 ms-2"></i>
+        <h5 class="mb-0 fw-semibold">ایجاد تسک جدید</h5>
     </div>
-    <div class="mb-3">
-        <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
+
+    @await Html.PartialAsync("_TaskFormFields", Model)
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi bi-paperclip"></i>
+                    ضمائم اولیه
+                </div>
+                <div class="card-body">
+                    <input type="file" name="files" class="form-control" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.zip" />
+                    <div class="form-text mt-2">
+                        می‌توانید چندین فایل انتخاب کنید. بعد از ایجاد هم می‌توانید فایل اضافه کنید.
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi bi-chat-left-text"></i>
+                    یادداشت اولیه
+                </div>
+                <div class="card-body">
+                    <textarea name="initialComment" class="form-control" rows="4" placeholder="توضیح یا کامنت اولیه برای این تسک..."></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mt-4 mt-lg-0 h-100">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div>
+                        <h6 class="fw-semibold mb-2">راهنما</h6>
+                        <ul class="small text-muted ps-3 mb-0">
+                            <li>بعد از ایجاد می‌توانید فایل یا کامنت اضافه کنید.</li>
+                            <li>از عنوان یکتا و بدون ابهام استفاده کنید.</li>
+                            <li>اولویت و برآورد دقیق باعث مدیریت بهتر می‌شود.</li>
+                        </ul>
+                    </div>
+                    <div class="mt-4 pt-3 border-top d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            انصراف
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            ایجاد تسک
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label class="form-label">انجام‌دهنده</label>
-        <select asp-for="PerformerId" asp-items="Model.Performers" class="form-select"></select>
-    </div>
-    <div class="row">
-        <div class="col">
-            <label asp-for="StartAt" class="form-label"></label>
-            <input asp-for="StartAt" class="form-control" />
-        </div>
-        <div class="col">
-            <label asp-for="EndAt" class="form-label"></label>
-            <input asp-for="EndAt" class="form-control" />
-        </div>
-        <div class="col">
-            <label asp-for="Hours" class="form-label"></label>
-            <input asp-for="Hours" class="form-control" />
-        </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col">
-            <label asp-for="OriginalEstimateHours" class="form-label"></label>
-            <input asp-for="OriginalEstimateHours" class="form-control" />
-        </div>
-        <div class="col">
-            <label asp-for="ProjectId" class="form-label">پروژه</label>
-            <select asp-for="ProjectId" asp-items="Model.Projects" class="form-select">
-                <option value="">انتخاب کنید</option>
-            </select>
-        </div>
-    </div>
-    <div class="row mt-3">
-        <div class="col">
-            <label asp-for="Status" class="form-label">وضعیت</label>
-            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TaskStatus>()"></select>
-        </div>
-        <div class="col">
-            <label asp-for="Priority" class="form-label">اولویت</label>
-            <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<TaskPriority>()"></select>
-        </div>
-    </div>
-    <button type="submit" class="btn btn-success mt-3">ثبت</button>
+
+    <input type="hidden" asp-for="ProjectId" />
 </form>

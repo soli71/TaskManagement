@@ -29,8 +29,24 @@ namespace TaskManagementMvc.Models
         [Display(Name = "نقش در شرکت")]
         public CompanyRole CompanyRole { get; set; } = CompanyRole.User;
 
+        // Grade relationship
+        [Display(Name = "رتبه")]
+        public int? GradeId { get; set; }
+
+        [Display(Name = "شماره شبا")]
+        [StringLength(26, ErrorMessage = "شماره شبا نمی‌تواند بیشتر از 26 کاراکتر باشد")]
+        public string? IbanNumber { get; set; }
+
+        [Display(Name = "شماره کارت")]
+        [StringLength(16, ErrorMessage = "شماره کارت نمی‌تواند بیشتر از 16 کاراکتر باشد")]
+        public string? CardNumber { get; set; }
+
+        // Computed properties for compatibility
+        public string? Name => FullName;
+
         // Navigation Properties
         public virtual Company? Company { get; set; }
+        public virtual Grade? Grade { get; set; }
         public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
         public virtual ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
         public virtual ICollection<TaskItem> CreatedTasks { get; set; } = new List<TaskItem>();

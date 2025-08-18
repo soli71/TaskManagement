@@ -5,36 +5,40 @@
 }
 
 <div class="container">
-    <h2>ویرایش نقش</h2>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">ویرایش نقش</h2>
+        <corp-btn asp-action="Index" variant="outline" icon="bi-arrow-right" dense>بازگشت</corp-btn>
+    </div>
     <form asp-action="Edit" method="post">
         <input type="hidden" asp-for="Id" />
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label"></label>
-            <input asp-for="Name" class="form-control" />
-            <span asp-validation-for="Name" class="text-danger"></span>
-        </div>
-        <div class="mb-3">
-            <label asp-for="Description" class="form-label"></label>
-            <textarea asp-for="Description" class="form-control"></textarea>
-        </div>
-        <div class="form-check mb-3">
-            <input class="form-check-input" asp-for="IsActive" />
-            <label class="form-check-label" asp-for="IsActive"></label>
+        <div class="row">
+            <div class="col-md-4"><corp-input asp-for="Name" required dense icon="bi-tag" placeholder="نام نقش"></corp-input></div>
+            <div class="col-md-6">
+                <div class="corp-field mb-3">
+                    <label asp-for="Description" class="form-label corp-label">@Html.DisplayNameFor(m=>m.Description)</label>
+                    <div class="corp-input-raw">
+                        <textarea asp-for="Description" class="form-control corp-input corp-input-dense" placeholder="توضیحات"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-start">
+                <corp-check asp-for="IsActive" dense></corp-check>
+            </div>
         </div>
 
-        <h5 class="mt-3">دسترسی‌ها</h5>
+        <h5 class="mt-3 mb-2">دسترسی‌ها</h5>
         @foreach (var group in permissions)
         {
-            <div class="mb-2">
-                <strong>@group.Group</strong>
-                <div class="row">
+            <div class="mb-2 border rounded p-2">
+                <strong class="d-block mb-1">@group.Group</strong>
+                <div class="row g-2">
                     @foreach (var p in group.Permissions)
                     {
-                        var isChecked = Model.SelectedPermissions.Contains(p.Id.ToString());
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="SelectedPermissions" value="@p.Id" id="perm_@p.Id" @(isChecked ? "checked" : "") />
-                                <label class="form-check-label" for="perm_@p.Id">@p.Name (@p.Code)</label>
+                        bool isChecked = Model.SelectedPermissions.Contains(p.Id.ToString());
+                        <div class="col-md-4 col-sm-6">
+                            <div class="form-check corp-check corp-check-dense mb-1">
+                                <input class="form-check-input corp-check-input" type="checkbox" name="SelectedPermissions" value="@p.Id" id="perm_@p.Id" @(isChecked ? "checked" : string.Empty) />
+                                <label class="form-check-label corp-check-label small" for="perm_@p.Id">@p.Name <span class="text-muted">(@p.Code)</span></label>
                             </div>
                         </div>
                     }
@@ -42,8 +46,10 @@
             </div>
         }
 
-        <button type="submit" class="btn btn-primary">ذخیره</button>
-        <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
+        <div class="d-flex gap-2 mt-3">
+            <corp-btn variant="success" icon="bi-save" dense>ذخیره</corp-btn>
+            <corp-btn asp-action="Index" variant="outline" icon="bi-x" dense>بازگشت</corp-btn>
+        </div>
     </form>
 </div>
 

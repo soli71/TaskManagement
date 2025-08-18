@@ -1,21 +1,22 @@
 @model IEnumerable<TaskManagementMvc.Models.Grade>
-@{
-    ViewData["Title"] = "گریدها";
-}
-<h2>لیست گریدها</h2>
-<p><a class="btn btn-primary" asp-action="Create">تعریف گرید جدید</a></p>
-<table class="table table-striped">
-    <thead><tr><th>شناسه</th><th>نام</th><th>نرخ</th><th></th></tr></thead>
-    <tbody>
+@{ ViewData["Title"] = "گریدها"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">لیست گریدها</h2>
+    <corp-btn asp-action="Create" icon="bi-plus-lg" dense>تعریف گرید جدید</corp-btn>
+    </div>
+<corp-table headers="شناسه,نام,نرخ,شرکت,عملیات" striped hover dense responsive caption="گریدها">
     @foreach (var g in Model)
     {
         <tr>
-            <td>@g.Id</td><td>@g.Name</td><td>@g.HourlyRate</td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@g.Id">ویرایش</a> |
-                <a asp-action="Delete" asp-route-id="@g.Id">حذف</a>
+            <td>@g.Id</td>
+            <td>@g.Name</td>
+            <td><corp-badge variant="info" dense>@g.HourlyRate</corp-badge></td>
+            <td>@(g.Company?.Name ?? "نامشخص")</td>
+            <td class="d-flex flex-wrap gap-1">
+                <corp-btn asp-action="Edit" asp-route-id="@g.Id" variant="outline" icon="bi-pencil" dense>ویرایش</corp-btn>
+                <corp-btn asp-action="Delete" asp-route-id="@g.Id" variant="danger" icon="bi-trash" dense>حذف</corp-btn>
             </td>
         </tr>
     }
-    </tbody>
-</table>
+</corp-table>

@@ -1,36 +1,377 @@
 @model IEnumerable<TaskManagementMvc.Models.Project>
 
-<div class="container">
-    <h2>پروژه‌ها</h2>
-    <p>
-        <a asp-action="Create" class="btn btn-primary">ایجاد پروژه</a>
-    </p>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>نام</th>
-                <th>شرکت</th>
-                <th>مدیر پروژه</th>
-                <th>وضعیت</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var p in Model)
-            {
-                <tr>
-                    <td>@p.Name</td>
-                    <td>@p.Company?.Name</td>
-                    <td>@p.ProjectManager?.FullName</td>
-                    <td>@p.Status</td>
-                    <td>
-                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-secondary">جزئیات</a>
-                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-warning">ویرایش</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+@{
+    ViewData["Title"] = "لیست پروژه‌ها";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold text-primary">
+                <i class="bi bi-folder-plus text-warning me-2"></i>
+                پروژه‌ها
+            </h2>
+            <p class="text-muted mb-0">مدیریت و نظارت بر پروژه‌های سازمان</p>
+        </div>
+        <div class="d-flex gap-2">
+            <corp-btn variant="outline" icon="bi-grid-3x3-gap" type="button" id="viewModeToggle" dense>نمای نمایش</corp-btn>
+            <corp-btn variant="primary" icon="bi-plus-circle" asp-action="Create" dense>ایجاد پروژه جدید</corp-btn>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="corp-field mb-0">
+                        <label class="form-label corp-label">وضعیت</label>
+                        <div class="corp-input-raw">
+                            <select class="form-select corp-select" id="statusFilter">
+                                <option value="">همه وضعیت‌ها</option>
+                                <option value="Planning">در حال برنامه‌ریزی</option>
+                                <option value="InProgress">در حال اجرا</option>
+                                <option value="OnHold">متوقف شده</option>
+                                <option value="Completed">تکمیل شده</option>
+                                <option value="Cancelled">لغو شده</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="corp-field mb-0">
+                        <label class="form-label corp-label">اولویت</label>
+                        <div class="corp-input-raw">
+                            <select class="form-select corp-select" id="priorityFilter">
+                                <option value="">همه اولویت‌ها</option>
+                                <option value="Low">کم</option>
+                                <option value="Medium">متوسط</option>
+                                <option value="High">بالا</option>
+                                <option value="Critical">بحرانی</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <!-- Standalone search input (not model-bound) replaced to avoid TagHelper null Model exception -->
+                    <div class="corp-field mb-0 corp-dense">
+                        <label for="searchInput" class="form-label corp-label">جستجو</label>
+                        <div class="corp-input-group">
+                            <span class="corp-input-icon"><i class="bi bi-search"></i></span>
+                            <input type="text" id="searchInput" name="searchInput" class="form-control corp-input corp-input-dense" placeholder="جستجو در نام، کد یا توضیحات پروژه..." />
+                        </div>
+                        <span class="text-danger corp-validation d-none"></span>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <corp-btn variant="outline" icon="bi-arrow-clockwise" type="button" onclick="resetFilters()" dense>پاک کردن</corp-btn>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="row g-4" id="projectsContainer">
+        @foreach (var p in Model)
+        {
+            <div class="col-12 col-sm-6 col-lg-4 col-xl-3 project-item" data-status="@p.Status" data-priority="@p.Priority" data-search="@p.Name @p.Code @p.Description @p.Company?.Name">
+                <div class="card h-100 project-card border-0 shadow-sm position-relative overflow-hidden">
+                    <!-- Status Indicator -->
+                    <div class="position-absolute top-0 end-0 p-2">
+                        <span class="badge status-badge status-@p.Status.ToString().ToLower()">
+                            @switch(p.Status.ToString())
+                            {
+                                case "Planning": <text>برنامه‌ریزی</text>; break;
+                                case "InProgress": <text>در حال اجرا</text>; break;
+                                case "OnHold": <text>متوقف</text>; break;
+                                case "Completed": <text>تکمیل</text>; break;
+                                case "Cancelled": <text>لغو شده</text>; break;
+                                default: <text>@p.Status</text>; break;
+                            }
+                        </span>
+                    </div>
+
+                    <!-- Priority Indicator -->
+                    <div class="position-absolute top-0 start-0 p-2">
+                        <span class="badge priority-badge priority-@p.Priority.ToString().ToLower()">
+                            @switch(p.Priority.ToString())
+                            {
+                                case "Low": <text><i class="bi bi-chevron-down"></i> کم</text>; break;
+                                case "Medium": <text><i class="bi bi-dash"></i> متوسط</text>; break;
+                                case "High": <text><i class="bi bi-chevron-up"></i> بالا</text>; break;
+                                case "Critical": <text><i class="bi bi-exclamation-triangle-fill"></i> بحرانی</text>; break;
+                                default: <text>@p.Priority</text>; break;
+                            }
+                        </span>
+                    </div>
+
+                    <div class="card-body pt-5">
+                        <h5 class="card-title text-dark fw-bold mb-2">@p.Name</h5>
+                        <p class="card-text text-muted small mb-3" title="@p.Description">
+                            @(p.Description?.Length > 80 ? p.Description.Substring(0, 80) + "..." : p.Description)
+                        </p>
+                        
+                        <div class="project-info mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-building text-primary me-2"></i>
+                                <span class="small text-muted">@p.Company?.Name</span>
+                            </div>
+                            @if (p.ProjectManager != null)
+                            {
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-person-check text-success me-2"></i>
+                                    <span class="small text-muted">@p.ProjectManager.FullName</span>
+                                </div>
+                            }
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar-date text-info me-2"></i>
+                                <span class="small text-muted">@p.StartDate?.ToPersianDate()</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar (if applicable) -->
+                        @if (p.Status.ToString() == "InProgress")
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="small text-muted">پیشرفت</span>
+                                    <span class="small text-muted">@(new Random().Next(20, 90))%</span>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-primary" style="width: @(new Random().Next(20, 90))%"></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="card-footer bg-light border-0">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-secondary">@p.Code</span>
+                            @if (p.Budget.HasValue)
+                            {
+                                <span class="small text-success fw-bold">@p.Budget.Value.ToString("N0") تومان</span>
+                            }
+                        </div>
+                        
+                        <div class="btn-group w-100" role="group">
+                            <a asp-controller="Tasks" asp-action="Board" asp-route-code="@p.Code" 
+                               class="btn btn-primary btn-sm" title="بورد تسک‌ها">
+                                <i class="bi bi-kanban"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@p.Id" 
+                               class="btn btn-outline-primary btn-sm" title="مشاهده/ویرایش">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            @if (User.IsInRole("SystemAdmin") || User.IsInRole("SystemManager") || User.IsInRole("CompanyManager"))
+                            {
+                                <a asp-action="ManageAccess" asp-route-id="@p.Id" 
+                                   class="btn btn-outline-info btn-sm" title="مدیریت دسترسی">
+                                    <i class="bi bi-shield-lock"></i>
+                                </a>
+                            }
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    onclick="deleteProject(@p.Id, '@p.Name')" title="حذف">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Empty State -->
+    <div class="text-center py-5 d-none" id="emptyState">
+        <i class="bi bi-folder-x text-muted" style="font-size: 4rem;"></i>
+        <h5 class="text-muted mt-3">هیچ پروژه‌ای یافت نشد</h5>
+        <p class="text-muted">با استفاده از فیلترهای بالا جستجوی خود را تغییر دهید یا پروژه جدیدی ایجاد کنید.</p>
+    </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید حذف پروژه</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3">آیا از حذف پروژه مطمئن هستید؟</h5>
+                    <p class="text-muted mb-0">پروژه <strong id="projectNameToDelete"></strong> حذف خواهد شد.</p>
+                    <p class="text-danger small">توجه: تمام تسک‌های این پروژه از آن جدا خواهند شد.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <form id="deleteForm" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>حذف پروژه
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
+@section Scripts {
+    <script>
+        // View mode toggle
+        let isListView = false;
+        document.getElementById('viewModeToggle').addEventListener('click', function() {
+            const container = document.getElementById('projectsContainer');
+            const icon = this.querySelector('i');
+            
+            if (isListView) {
+                // Switch to grid view
+                container.className = 'row g-4';
+                container.querySelectorAll('.project-item').forEach(item => {
+                    item.className = 'col-12 col-sm-6 col-lg-4 col-xl-3 project-item';
+                });
+                icon.className = 'bi bi-grid-3x3-gap';
+                isListView = false;
+            } else {
+                // Switch to list view
+                container.className = 'row g-2';
+                container.querySelectorAll('.project-item').forEach(item => {
+                    item.className = 'col-12 project-item';
+                });
+                icon.className = 'bi bi-list-ul';
+                isListView = true;
+            }
+        });
+
+        // Search and filter functionality
+        function filterProjects() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            
+            const projects = document.querySelectorAll('.project-item');
+            let visibleCount = 0;
+            
+            projects.forEach(project => {
+                const searchData = project.getAttribute('data-search').toLowerCase();
+                const status = project.getAttribute('data-status');
+                const priority = project.getAttribute('data-priority');
+                
+                const matchesSearch = searchData.includes(searchTerm);
+                const matchesStatus = !statusFilter || status === statusFilter;
+                const matchesPriority = !priorityFilter || priority === priorityFilter;
+                
+                if (matchesSearch && matchesStatus && matchesPriority) {
+                    project.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    project.style.display = 'none';
+                }
+            });
+            
+            // Show/hide empty state
+            const emptyState = document.getElementById('emptyState');
+            if (visibleCount === 0) {
+                emptyState.classList.remove('d-none');
+            } else {
+                emptyState.classList.add('d-none');
+            }
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('priorityFilter').value = '';
+            filterProjects();
+        }
+
+        // Delete project function
+        function deleteProject(projectId, projectName) {
+            document.getElementById('projectNameToDelete').textContent = projectName;
+            document.getElementById('deleteForm').action = '@Url.Action("Delete")/' + projectId;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterProjects);
+        document.getElementById('statusFilter').addEventListener('change', filterProjects);
+        document.getElementById('priorityFilter').addEventListener('change', filterProjects);
+
+        // Animation on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.project-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .project-card {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        }
+        
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+        }
+        
+        .status-planning { background: linear-gradient(45deg, #17a2b8, #20c997); }
+        .status-inprogress { background: linear-gradient(45deg, #007bff, #6610f2); }
+        .status-onhold { background: linear-gradient(45deg, #ffc107, #fd7e14); }
+        .status-completed { background: linear-gradient(45deg, #28a745, #20c997); }
+        .status-cancelled { background: linear-gradient(45deg, #dc3545, #e83e8c); }
+        
+        .priority-badge {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+        }
+        
+        .priority-low { background: linear-gradient(45deg, #6c757d, #adb5bd); }
+        .priority-medium { background: linear-gradient(45deg, #007bff, #17a2b8); }
+        .priority-high { background: linear-gradient(45deg, #fd7e14, #ffc107); }
+        .priority-critical { background: linear-gradient(45deg, #dc3545, #e83e8c); }
+        
+        .project-info {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        
+        .btn-group .btn {
+            border-radius: 0;
+        }
+        
+        .btn-group .btn:first-child {
+            border-top-right-radius: 0.375rem;
+            border-bottom-right-radius: 0.375rem;
+        }
+        
+        .btn-group .btn:last-child {
+            border-top-left-radius: 0.375rem;
+            border-bottom-left-radius: 0.375rem;
+        }
+        
+        .card-footer {
+            background: rgba(248, 249, 250, 0.8) !important;
+        }
+    </style>
+}

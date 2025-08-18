@@ -1,0 +1,278 @@
+@{
+    ViewData["Title"] = "نمایش اعلان‌ها";
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h2 class="mb-0">
+                    <i class="bi bi-bell-fill text-primary me-2"></i>
+                    سیستم اعلان‌های Push
+                </h2>
+            </div>
+
+            <div class="alert alert-info" role="alert">
+                <i class="bi bi-info-circle me-2"></i>
+                این صفحه برای نمایش انواع مختلف اعلان‌های Push طراحی شده است. روی دکمه‌های زیر کلیک کنید تا اعلان‌های مختلف را مشاهده کنید.
+            </div>
+
+            <div class="row g-4">
+                <!-- Basic Notifications -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-palette me-2"></i>
+                                اعلان‌های پایه
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-success" onclick="showSuccessNotification()">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    اعلان موفقیت
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="showErrorNotification()">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    اعلان خطا
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="showWarningNotification()">
+                                    <i class="bi bi-exclamation-circle me-2"></i>
+                                    اعلان هشدار
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="showInfoNotification()">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    اعلان اطلاعات
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error-Specific Notifications -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-shield-exclamation me-2"></i>
+                                اعلان‌های خطای سیستم
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-danger" onclick="showAuthError()">
+                                    <i class="bi bi-person-x me-2"></i>
+                                    خطای احراز هویت
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="showValidationError()">
+                                    <i class="bi bi-clipboard-x me-2"></i>
+                                    خطای اعتبارسنجی
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="showPermissionError()">
+                                    <i class="bi bi-lock me-2"></i>
+                                    خطای دسترسی
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="showServerError()">
+                                    <i class="bi bi-server me-2"></i>
+                                    خطای سرور
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="showNetworkError()">
+                                    <i class="bi bi-wifi-off me-2"></i>
+                                    خطای شبکه
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Features -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear me-2"></i>
+                                ویژگی‌های پیشرفته
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary" onclick="showPersistentNotification()">
+                                    <i class="bi bi-pin me-2"></i>
+                                    اعلان ثابت
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="showCustomDurationNotification()">
+                                    <i class="bi bi-clock me-2"></i>
+                                    اعلان با مدت زمان سفارشی
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="showMultipleNotifications()">
+                                    <i class="bi bi-stack me-2"></i>
+                                    چندین اعلان همزمان
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" onclick="clearAllNotifications()">
+                                    <i class="bi bi-trash me-2"></i>
+                                    پاک کردن همه اعلان‌ها
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Practical Examples -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-briefcase me-2"></i>
+                                مثال‌های کاربردی
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-success" onclick="showTaskCreatedNotification()">
+                                    <i class="bi bi-plus-circle me-2"></i>
+                                    تسک ایجاد شد
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="showTaskAssignedNotification()">
+                                    <i class="bi bi-person-check me-2"></i>
+                                    تسک تخصیص داده شد
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" onclick="showTaskDeadlineNotification()">
+                                    <i class="bi bi-alarm me-2"></i>
+                                    مهلت تسک نزدیک است
+                                </button>
+                                <button type="button" class="btn btn-outline-success" onclick="showProjectCompletedNotification()">
+                                    <i class="bi bi-check2-all me-2"></i>
+                                    پروژه تکمیل شد
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Information -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                ویژگی‌های سیستم اعلان
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold text-primary">ویژگی‌های طراحی:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>طراحی RTL برای فارسی</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>انیمیشن‌های نرم</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>طراحی واکنش‌گرا</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>پشتیبانی از تم تیره</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Progress bar برای نمایش زمان</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold text-primary">ویژگی‌های عملکردی:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>4 نوع اعلان مختلف</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>اعلان‌های ثابت و موقت</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>مدیریت خودکار حداکثر اعلان‌ها</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>پشتیبانی از Browser Notifications</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>ادغام با سمت سرور</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Basic notification functions
+        function showSuccessNotification() {
+            TaskNotifications.success('عملیات موفق', 'عملیات با موفقیت انجام شد!');
+        }
+
+        function showErrorNotification() {
+            TaskNotifications.error('خطا رخ داد', 'متأسفانه خطایی در سیستم رخ داده است.');
+        }
+
+        function showWarningNotification() {
+            TaskNotifications.warning('هشدار', 'لطفاً به این موضوع توجه کنید.');
+        }
+
+        function showInfoNotification() {
+            TaskNotifications.info('اطلاعات', 'این یک پیام اطلاعاتی است.');
+        }
+
+        // Error-specific functions
+        function showAuthError() {
+            TaskNotifications.showAuthError('لطفاً مجدداً وارد سیستم شوید.');
+        }
+
+        function showValidationError() {
+            TaskNotifications.showValidationError('برخی فیلدها به درستی پر نشده‌اند.');
+        }
+
+        function showPermissionError() {
+            TaskNotifications.showPermissionError('شما مجوز دسترسی به این بخش را ندارید.');
+        }
+
+        function showServerError() {
+            TaskNotifications.showServerError('سرور در حال حاضر در دسترس نیست.');
+        }
+
+        function showNetworkError() {
+            TaskNotifications.showNetworkError('اتصال اینترنت شما قطع شده است.');
+        }
+
+        // Advanced features
+        function showPersistentNotification() {
+            TaskNotifications.error('اعلان ثابت', 'این اعلان تا زمانی که آن را ببندید باقی می‌ماند.', { persistent: true });
+        }
+
+        function showCustomDurationNotification() {
+            TaskNotifications.info('اعلان 10 ثانیه‌ای', 'این اعلان 10 ثانیه نمایش داده می‌شود.', { duration: 10000 });
+        }
+
+        function showMultipleNotifications() {
+            TaskNotifications.success('اعلان اول', 'این اولین اعلان است.');
+            setTimeout(() => TaskNotifications.info('اعلان دوم', 'این دومین اعلان است.'), 500);
+            setTimeout(() => TaskNotifications.warning('اعلان سوم', 'این سومین اعلان است.'), 1000);
+        }
+
+        function clearAllNotifications() {
+            TaskNotifications.clear();
+            TaskNotifications.info('تمیز شد', 'تمامی اعلان‌ها پاک شدند.');
+        }
+
+        // Practical examples
+        function showTaskCreatedNotification() {
+            TaskNotifications.success('تسک جدید', 'تسک "بررسی گزارش ماهانه" با موفقیت ایجاد شد.');
+        }
+
+        function showTaskAssignedNotification() {
+            TaskNotifications.info('تسک جدید', 'تسک "طراحی رابط کاربری" به شما تخصیص داده شد.');
+        }
+
+        function showTaskDeadlineNotification() {
+            TaskNotifications.warning('مهلت نزدیک', 'مهلت تسک "تست نهایی" فردا به پایان می‌رسد.');
+        }
+
+        function showProjectCompletedNotification() {
+            TaskNotifications.success('پروژه تکمیل شد', 'پروژه "سیستم مدیریت" با موفقیت به پایان رسید!', { persistent: true });
+        }
+
+        // Demo on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show a welcome notification
+            TaskNotifications.info('خوش آمدید', 'سیستم اعلان‌های Push آماده استفاده است.');
+        });
+    </script>
+}

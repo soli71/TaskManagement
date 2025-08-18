@@ -1,0 +1,207 @@
+@model TaskManagementMvc.Models.ViewModels.TaskFormViewModel
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-card-text"></i>
+                مشخصات اصلی
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-semibold">
+                        عنوان تسک
+                    </label>
+                    <input asp-for="Title" class="form-control form-control-lg" placeholder="عنوان واضح و مشخص برای تسک" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold">توضیحات</label>
+                    <textarea asp-for="Description" class="form-control" rows="6" placeholder="جزئیات کامل تسک، اهداف، شروط اتمام..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Status" class="form-label fw-semibold">وضعیت</label>
+                        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TaskManagementMvc.Models.TaskStatus>()">
+                            <option value="">-- انتخاب وضعیت --</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Priority" class="form-label fw-semibold d-flex align-items-center gap-1">اولویت
+                            <span id="priorityBadge" class="badge bg-secondary small">--</span>
+                        </label>
+                        <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<TaskManagementMvc.Models.TaskPriority>()" id="prioritySelect">
+                            <option value="">-- انتخاب اولویت --</option>
+                        </select>
+                        <span asp-validation-for="Priority" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-clock-history"></i>
+                زمان‌بندی و برآورد
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="StartAt" class="form-label fw-semibold">تاریخ شروع</label>
+                        <input asp-for="StartAt" class="form-control" type="date" />
+                        <span asp-validation-for="StartAt" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EndAt" class="form-label fw-semibold">تاریخ پایان</label>
+                        <input asp-for="EndAt" class="form-control" type="date" />
+                        <span asp-validation-for="EndAt" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="OriginalEstimateHours" class="form-label fw-semibold">تخمین اولیه (ساعت)</label>
+                        <div class="input-group">
+                            <input asp-for="OriginalEstimateHours" class="form-control" type="number" min="0" step="0.25" placeholder="0.00" id="estimateInput" />
+                            <span class="input-group-text">ساعت</span>
+                        </div>
+                        <span asp-validation-for="OriginalEstimateHours" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Hours" class="form-label fw-semibold">ساعت ثبت‌شده</label>
+                        <div class="input-group">
+                            <input asp-for="Hours" class="form-control" type="number" min="0" step="0.25" placeholder="0.00" id="hoursInput" />
+                            <span class="input-group-text">ساعت</span>
+                        </div>
+                        <span asp-validation-for="Hours" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="mt-3" id="progressWrapper" style="display:none;">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span>پیشرفت مصرف زمان</span>
+                        <span id="progressLabel"></span>
+                    </div>
+                    <div class="progress" style="height: 18px;">
+                        <div class="progress-bar" role="progressbar" style="width:0%" id="hoursProgress"></div>
+                    </div>
+                    <div class="form-text mt-1" id="overrunHint" style="display:none;">
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                        مصرف زمان از تخمین اولیه عبور کرده است.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-people"></i>
+                تخصیص و وابستگی‌ها
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">پروژه</label>
+                    <select asp-for="ProjectId" asp-items="Model.Projects" class="form-select" id="projectSelect">
+                        <option value="">-- انتخاب پروژه --</option>
+                    </select>
+                    <span asp-validation-for="ProjectId" class="text-danger small"></span>
+                </div>
+                @if (User.IsInRole("SystemAdmin"))
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">شرکت</label>
+                        <select asp-for="CompanyId" asp-items="Model.Companies" class="form-select">
+                            <option value="">-- انتخاب شرکت --</option>
+                        </select>
+                        <span asp-validation-for="CompanyId" class="text-danger small"></span>
+                    </div>
+                }
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">انجام‌دهنده</label>
+                    <select asp-for="PerformerId" asp-items="Model.Performers" class="form-select" id="performerSelect">
+                        <option value="">-- انتخاب انجام‌دهنده --</option>
+                    </select>
+                    <span asp-validation-for="PerformerId" class="text-danger small"></span>
+                </div>
+                <div class="alert alert-secondary small mb-0" id="assignmentHint">
+                    <i class="bi bi-info-circle"></i>
+                    پس از انتخاب پروژه، لیست انجام‌دهندگان مناسب را فیلتر کنید (به‌زودی).
+                </div>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-light fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-lightbulb"></i>
+                نکات
+            </div>
+            <div class="card-body small text-muted">
+                <ul class="ps-3 mb-0">
+                    <li>عنوان واضح و کوتاه انتخاب کنید.</li>
+                    <li>برای اولویت بالا، توضیحات دقیق‌تر بنویسید.</li>
+                    <li>تخمین اولیه را قبل از ثبت ساعات واقعی وارد کنید.</li>
+                    <li>پیشرفت مصرف ساعت به‌صورت خودکار محاسبه می‌شود.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function(){
+            const prioritySelect = document.getElementById('prioritySelect');
+            const priorityBadge = document.getElementById('priorityBadge');
+            const hoursInput = document.getElementById('hoursInput');
+            const estimateInput = document.getElementById('estimateInput');
+            const progressWrapper = document.getElementById('progressWrapper');
+            const hoursProgress = document.getElementById('hoursProgress');
+            const progressLabel = document.getElementById('progressLabel');
+            const overrunHint = document.getElementById('overrunHint');
+
+            const priorityColors = {
+                'Low': 'bg-success',
+                'Normal': 'bg-primary',
+                'Medium': 'bg-info',
+                'High': 'bg-warning text-dark',
+                'Critical': 'bg-danger'
+            };
+
+            function updatePriorityBadge(){
+                if(!prioritySelect) return;
+                const text = prioritySelect.options[prioritySelect.selectedIndex]?.text || '--';
+                priorityBadge.textContent = text;
+                priorityBadge.className = 'badge small ' + (priorityColors[text] || 'bg-secondary');
+            }
+
+            function updateProgress(){
+                if(!hoursInput || !estimateInput) return;
+                const hours = parseFloat(hoursInput.value) || 0;
+                const estimate = parseFloat(estimateInput.value) || 0;
+                if(estimate > 0){
+                    const percent = Math.min( (hours / estimate) * 100, 150); // cap visual at 150%
+                    progressWrapper.style.display = 'block';
+                    hoursProgress.style.width = percent + '%';
+                    hoursProgress.className = 'progress-bar';
+                    if(percent < 70) hoursProgress.classList.add('bg-success');
+                    else if(percent < 100) hoursProgress.classList.add('bg-warning');
+                    else hoursProgress.classList.add('bg-danger');
+                    progressLabel.textContent = hours.toFixed(2) + ' / ' + estimate.toFixed(2) + ' ساعت (' + Math.round(percent) + '%)';
+                    overrunHint.style.display = percent > 100 ? 'block' : 'none';
+                } else {
+                    progressWrapper.style.display = 'none';
+                }
+            }
+
+            prioritySelect?.addEventListener('change', updatePriorityBadge);
+            hoursInput?.addEventListener('input', updateProgress);
+            estimateInput?.addEventListener('input', updateProgress);
+
+            // initial
+            updatePriorityBadge();
+            updateProgress();
+        })();
+    </script>
+}
+
+

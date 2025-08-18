@@ -1,0 +1,262 @@
+@{
+    ViewData["Title"] = "تست سیستم اعلان‌رسانی";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="bi bi-bell"></i> تست سیستم اعلان‌رسانی</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">از دکمه‌های زیر برای تست سیستم notification استفاده کنید:</p>
+                    
+                    <div class="d-grid gap-3">
+                        <button id="sendSingleNotification" class="btn btn-primary">
+                            <i class="bi bi-bell-fill"></i> ارسال یک پیام تست
+                        </button>
+                        
+                        <button id="sendMultipleNotifications" class="btn btn-success">
+                            <i class="bi bi-bell-fill"></i> ارسال چندین پیام تست (انواع مختلف)
+                        </button>
+                        
+                        <button id="checkConnection" class="btn btn-info">
+                            <i class="bi bi-wifi"></i> بررسی اتصال SignalR
+                        </button>
+                        
+                        <button id="showNotificationPanel" class="btn btn-secondary">
+                            <i class="bi bi-list"></i> نمایش پنل اعلان‌ها
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-info-circle"></i> وضعیت سیستم</h5>
+                </div>
+                <div class="card-body">
+                    <div id="connectionStatus" class="alert alert-secondary">
+                        <strong>وضعیت اتصال:</strong> در حال بررسی...
+                    </div>
+                    
+                    <div id="lastNotification" class="alert alert-light" style="display: none;">
+                        <strong>آخرین پیام:</strong>
+                        <div id="lastNotificationContent"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i class="bi bi-code"></i> Console Log</h6>
+                </div>
+                <div class="card-body">
+                    <div id="consoleLog" style="height: 200px; overflow-y: auto; background: #f8f9fa; padding: 10px; font-family: monospace; font-size: 12px;">
+                        <!-- Console messages will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Enhanced console logging
+        function logToConsole(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('consoleLog');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span class="text-muted">[${timestamp}]</span> <span class="text-${getBootstrapClass(type)}">${message}</span>`;
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            // Also log to browser console
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function getBootstrapClass(type) {
+            switch(type) {
+                case 'error': return 'danger';
+                case 'warn': return 'warning';
+                case 'success': return 'success';
+                default: return 'info';
+            }
+        }
+
+        // Check SignalR connection status
+        function checkSignalRConnection() {
+            logToConsole('Checking NotificationManager status...', 'info');
+            
+            const status = getNotificationManagerStatus();
+            logToConsole(`Manager exists: ${status.exists}`, status.exists ? 'success' : 'error');
+            
+            if (status.exists && status.manager) {
+                const connectionStatus = status.manager.getConnectionStatus();
+                logToConsole(`Connection state: ${connectionStatus.connectionState}`, 'info');
+                logToConsole(`Is connected: ${connectionStatus.isConnected}`, connectionStatus.isConnected ? 'success' : 'warn');
+                
+                updateConnectionStatusUI(connectionStatus);
+            } else {
+                updateConnectionStatusUI({ isConnected: false, connectionState: 'Manager not found' });
+            }
+        }
+
+        function updateConnectionStatusUI(connectionStatus) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (connectionStatus.isConnected) {
+                statusElement.className = 'alert alert-success';
+                statusElement.innerHTML = '<strong>وضعیت اتصال:</strong> متصل ✅';
+            } else {
+                statusElement.className = 'alert alert-danger';
+                statusElement.innerHTML = `<strong>وضعیت اتصال:</strong> ${connectionStatus.connectionState || 'قطع'} ❌`;
+            }
+        }
+
+        // Wait for notification manager to be ready
+        function waitForNotificationManager(callback, maxAttempts = 50) {
+            let attempts = 0;
+            
+            function check() {
+                attempts++;
+                const status = getNotificationManagerStatus();
+                
+                if (status.exists) {
+                    logToConsole('NotificationManager found!', 'success');
+                    callback(status.manager);
+                } else if (attempts < maxAttempts) {
+                    logToConsole(`Waiting for NotificationManager... (attempt ${attempts})`, 'warn');
+                    setTimeout(check, 100);
+                } else {
+                    logToConsole('Failed to find NotificationManager after maximum attempts', 'error');
+                }
+            }
+            
+            check();
+        }
+
+        // Send single test notification
+        document.getElementById('sendSingleNotification').addEventListener('click', async function() {
+            logToConsole('Sending single test notification...');
+            
+            waitForNotificationManager(async function(manager) {
+                try {
+                    const response = await fetch('@Url.Action("SendTestNotification")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        logToConsole('Test notification sent successfully!', 'success');
+                        document.getElementById('lastNotificationContent').innerHTML = 'Single test notification';
+                        document.getElementById('lastNotification').style.display = 'block';
+                        
+                        // Also show local notification with extended display time (10 seconds)
+                        setTimeout(() => {
+                            manager.sendNotification('این یک نوتیفیکیشن تست محلی است', 'info', 'تست محلی', 10000);
+                        }, 1000);
+                    } else {
+                        logToConsole(`Failed to send notification: ${result.message}`, 'error');
+                    }
+                } catch (error) {
+                    logToConsole(`Error sending notification: ${error.message}`, 'error');
+                }
+            });
+        });
+
+        // Send multiple test notifications
+        document.getElementById('sendMultipleNotifications').addEventListener('click', async function() {
+            logToConsole('Sending multiple test notifications...');
+            
+            waitForNotificationManager(async function(manager) {
+                try {
+                    const response = await fetch('@Url.Action("SendMultipleNotifications")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        logToConsole('Multiple test notifications sent successfully!', 'success');
+                        document.getElementById('lastNotificationContent').innerHTML = 'Multiple test notifications';
+                        document.getElementById('lastNotification').style.display = 'block';
+                        
+                        // Show local notifications with extended display times
+                        setTimeout(() => {
+                            manager.sendNotification('پیام موفقیت', 'success', 'موفق', 8000);
+                        }, 500);
+                        setTimeout(() => {
+                            manager.sendNotification('پیام هشدار', 'warning', 'هشدار', 8000);
+                        }, 1000);
+                        setTimeout(() => {
+                            manager.sendNotification('پیام خطا', 'error', 'خطا', 8000);
+                        }, 1500);
+                        setTimeout(() => {
+                            manager.sendNotification('پیام اطلاعات', 'info', 'اطلاعات', 8000);
+                        }, 2000);
+                    } else {
+                        logToConsole(`Failed to send notifications: ${result.message}`, 'error');
+                    }
+                } catch (error) {
+                    logToConsole(`Error sending notifications: ${error.message}`, 'error');
+                }
+            });
+        });
+
+        // Check connection status
+        document.getElementById('checkConnection').addEventListener('click', function() {
+            logToConsole('Checking SignalR connection...');
+            checkSignalRConnection();
+        });
+
+        // Show notification panel (simulate)
+        document.getElementById('showNotificationPanel').addEventListener('click', function() {
+            logToConsole('Showing notification panel...');
+            
+            waitForNotificationManager(function(manager) {
+                // Show demo notifications with extended display time (12 seconds)
+                manager.sendNotification('این یک نمونه پیام است', 'info', 'نمایش پنل', 12000);
+                manager.sendNotification('پنل نوتیفیکیشن فعال است', 'success', 'موفق', 12000);
+                
+                logToConsole('Demo notifications displayed', 'success');
+            });
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            logToConsole('Test page loaded');
+            
+            // Wait a bit then check for notification manager
+            setTimeout(() => {
+                waitForNotificationManager(function(manager) {
+                    logToConsole('NotificationManager is ready for testing!', 'success');
+                    checkSignalRConnection();
+                });
+            }, 500);
+            
+            // Check connection status every 5 seconds
+            setInterval(function() {
+                const status = getNotificationManagerStatus();
+                if (status.exists) {
+                    const connectionStatus = status.manager.getConnectionStatus();
+                    updateConnectionStatusUI(connectionStatus);
+                }
+            }, 5000);
+        });
+    </script>
+}
+
+@Html.AntiForgeryToken()

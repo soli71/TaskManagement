@@ -1,75 +1,395 @@
 @model ProjectFormViewModel
 
 @{
+    ViewData["Title"] = "ویرایش پروژه";
     var companies = Model.Companies;
     var managers = Model.ProjectManagers;
+    var isAdmin = User.IsInRole("SystemAdmin");
 }
 
-<div class="container">
-    <h2>ویرایش پروژه</h2>
-    <form asp-action="Edit" method="post">
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold text-primary">
+                <i class="bi bi-pencil-square text-warning me-2"></i>
+                ویرایش پروژه
+            </h2>
+            <p class="text-muted mb-0">ویرایش اطلاعات پروژه "@Model.Name"</p>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-action="Index">پروژه‌ها</a></li>
+                <li class="breadcrumb-item active">ویرایش</li>
+            </ol>
+        </nav>
+    </div>
+
+    <form asp-action="Edit" method="post" class="needs-validation" novalidate id="editProjectForm">
         <input type="hidden" asp-for="Id" />
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label"></label>
-            <input asp-for="Name" class="form-control" />
-            <span asp-validation-for="Name" class="text-danger"></span>
-        </div>
-        <div class="mb-3">
-            <label asp-for="Description" class="form-label"></label>
-            <textarea asp-for="Description" class="form-control"></textarea>
-        </div>
-        <div class="mb-3">
-            <label asp-for="Code" class="form-label"></label>
-            <input asp-for="Code" class="form-control" />
-        </div>
-
+        
         <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="CompanyId" class="form-label">شرکت</label>
-                <select asp-for="CompanyId" class="form-select" asp-items="@(new SelectList(companies, "Id", "Name", Model.CompanyId))"></select>
+            <!-- Main Information Card -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            اطلاعات اصلی پروژه
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8"><corp-input asp-for="Name" placeholder="نام پروژه را وارد کنید" icon="bi-folder" required dense></corp-input></div>
+                            <div class="col-md-4"><corp-input asp-for="Code" icon="bi-hash" readonly dense></corp-input></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label corp-label">توضیحات پروژه</label>
+                            <textarea asp-for="Description" class="form-control corp-input" rows="4" placeholder="توضیحات تفصیلی پروژه را وارد کنید..."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6"><corp-select asp-for="Priority" placeholder="انتخاب اولویت" icon="bi-flag" required dense>
+                                <option value="Low">کم</option>
+                                <option value="Medium">متوسط</option>
+                                <option value="High">بالا</option>
+                                <option value="Critical">بحرانی</option>
+                            </corp-select></div>
+                            <div class="col-md-6"><corp-select asp-for="Status" placeholder="انتخاب وضعیت" icon="bi-activity" dense>
+                                <option value="Active">فعال</option>
+                                <option value="OnHold">متوقف شده</option>
+                                <option value="Completed">تکمیل شده</option>
+                                <option value="Cancelled">لغو شده</option>
+                            </corp-select></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dates and Budget Card -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-calendar-range me-2"></i>
+                            زمان‌بندی و بودجه
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6"><corp-input asp-for="StartDate" type="date" icon="bi-calendar-event" dense></corp-input></div>
+                            <div class="col-md-6"><corp-input asp-for="EstimatedEndDate" type="date" icon="bi-calendar-check" dense></corp-input></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6"><corp-input asp-for="Budget" icon="bi-cash-coin" placeholder="0" dense></corp-input></div>
+                            <div class="col-md-6"><corp-input asp-for="ActualCost" icon="bi-receipt" placeholder="0" dense></corp-input></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6 mb-3">
-                <label asp-for="ProjectManagerId" class="form-label">مدیر پروژه</label>
-                <select asp-for="ProjectManagerId" class="form-select" asp-items="@(new SelectList(managers, "Id", "FullName", Model.ProjectManagerId))"></select>
+
+            <!-- Side Panel -->
+            <div class="col-lg-4">
+                <!-- Company and Manager Card -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people me-2"></i>
+                            شرکت و مدیریت
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (isAdmin)
+                        {
+                            <corp-select asp-for="CompanyId" placeholder="انتخاب شرکت" icon="bi-building" required dense>
+                                @foreach (var company in companies)
+                                {
+                                    <option value="@company.Id" selected="@(company.Id == Model.CompanyId)">@company.Name</option>
+                                }
+                            </corp-select>
+                        }
+                        else
+                        {
+                            <!-- Show company name for non-admin users -->
+                            <div class="mb-3">
+                                <label class="form-label">شرکت</label>
+                                <div class="alert alert-info border-0 py-2">
+                                    <i class="bi bi-building me-2"></i>
+                                    @companies.FirstOrDefault()?.Name
+                                </div>
+                                <input type="hidden" asp-for="CompanyId" />
+                            </div>
+                        }
+
+                        <corp-select asp-for="ProjectManagerId" placeholder="بدون مدیر پروژه" icon="bi-person-check" dense>
+                            <option value="">بدون مدیر پروژه</option>
+                            @foreach (var manager in managers)
+                            {
+                                <option value="@manager.Id" selected="@(manager.Id == Model.ProjectManagerId)">@manager.FullName</option>
+                            }
+                        </corp-select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons Card -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <corp-btn variant="primary" icon="bi-check-circle" dense>ذخیره تغییرات</corp-btn>
+                            <corp-btn variant="outline" icon="bi-arrow-left" asp-action="Index" dense>بازگشت</corp-btn>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Card -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-graph-up me-2"></i>
+                            آمار پروژه
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="stat-label">
+                                    <i class="bi bi-list-task text-primary me-2"></i>
+                                    تعداد تسک‌ها
+                                </span>
+                                <span class="stat-value badge bg-primary">@(ViewBag.TaskCount ?? 0)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="stat-label">
+                                    <i class="bi bi-receipt text-success me-2"></i>
+                                    تعداد فاکتورها
+                                </span>
+                                <span class="stat-value badge bg-success">@(ViewBag.InvoiceCount ?? 0)</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="stat-label">
+                                    <i class="bi bi-calendar-plus text-info me-2"></i>
+                                    تاریخ ایجاد
+                                </span>
+                                <span class="stat-value small text-muted">@(ViewBag.CreatedAt != null ? ((DateTime)ViewBag.CreatedAt).ToPersianDate() : "نامشخص")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Card -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-lightning me-2"></i>
+                            عملیات سریع
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <corp-btn variant="outline" icon="bi-list-task" asp-controller="Tasks" asp-action="Index" asp-route-projectId="@Model.Id" dense>تسک‌ها</corp-btn>
+                            <corp-btn variant="outline" icon="bi-receipt" asp-controller="Invoices" asp-action="Index" asp-route-projectId="@Model.Id" dense>فاکتورها</corp-btn>
+                            @if (User.IsInRole("SystemAdmin") || User.IsInRole("SystemManager") || User.IsInRole("CompanyManager"))
+                            {
+                                <corp-btn variant="outline" icon="bi-shield-lock" asp-action="ManageAccess" asp-route-id="@Model.Id" dense>دسترسی</corp-btn>
+                            }
+                            <corp-btn variant="outline" icon="bi-kanban" asp-controller="Tasks" asp-action="Board" asp-route-code="@Model.Code" dense>بورد</corp-btn>
+                            <hr>
+                            <corp-btn variant="danger" icon="bi-trash" type="button" onclick="deleteProject(@Model.Id, '@Model.Name')" dense>حذف پروژه</corp-btn>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="StartDate" class="form-label"></label>
-                <input asp-for="StartDate" class="form-control" />
-            </div>
-            <div class="col-md-6 mb-3">
-                <label asp-for="EstimatedEndDate" class="form-label"></label>
-                <input asp-for="EstimatedEndDate" class="form-control" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="Budget" class="form-label"></label>
-                <input asp-for="Budget" class="form-control" />
-            </div>
-            <div class="col-md-6 mb-3">
-                <label asp-for="ActualCost" class="form-label"></label>
-                <input asp-for="ActualCost" class="form-control" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="Priority" class="form-label"></label>
-                <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<TaskManagementMvc.Models.ProjectPriority>()"></select>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label asp-for="Status" class="form-label"></label>
-                <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TaskManagementMvc.Models.ProjectStatus>()"></select>
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-primary">ذخیره</button>
-        <a asp-action="Index" class="btn btn-secondary">بازگشت</a>
     </form>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    تأیید حذف پروژه
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف پروژه "<span id="projectNameToDelete"></span>" مطمئن هستید؟</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    توجه: تمام تسک‌های این پروژه از آن جدا خواهند شد.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <form asp-action="Delete" method="post" class="d-inline">
+                    <input type="hidden" name="id" id="projectIdToDelete" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>
+                        حذف پروژه
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form validation
+            const form = document.getElementById('editProjectForm');
+            
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+
+            // Auto-format budget and cost inputs
+            const budgetInput = document.querySelector('input[name="Budget"]');
+            const costInput = document.querySelector('input[name="ActualCost"]');
+            
+            function formatNumber(input) {
+                input.addEventListener('input', function() {
+                    let value = this.value.replace(/,/g, '');
+                    if (!isNaN(value) && value !== '') {
+                        this.value = parseInt(value).toLocaleString();
+                    }
+                });
+            }
+            
+            if (budgetInput) formatNumber(budgetInput);
+            if (costInput) formatNumber(costInput);
+
+            // Date validation
+            const startDateInput = document.querySelector('input[name="StartDate"]');
+            const endDateInput = document.querySelector('input[name="EstimatedEndDate"]');
+            
+            function validateDates() {
+                if (startDateInput.value && endDateInput.value) {
+                    const startDate = new Date(startDateInput.value);
+                    const endDate = new Date(endDateInput.value);
+                    
+                    if (endDate <= startDate) {
+                        endDateInput.setCustomValidity('تاریخ پایان باید بعد از تاریخ شروع باشد');
+                    } else {
+                        endDateInput.setCustomValidity('');
+                    }
+                }
+            }
+            
+            startDateInput?.addEventListener('change', validateDates);
+            endDateInput?.addEventListener('change', validateDates);
+
+            // Animate cards on load
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.4s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        // Delete project function
+        function deleteProject(projectId, projectName) {
+            document.getElementById('projectIdToDelete').value = projectId;
+            document.getElementById('projectNameToDelete').textContent = projectName;
+            
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+        }
+        
+        .input-group-text {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            border-color: #ced4da;
+        }
+        
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #0d6efd, #6610f2);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #0b5ed7, #5a0fc8);
+            transform: translateY(-1px);
+        }
+        
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "◀";
+        }
+        
+        .alert-info {
+            background: linear-gradient(45deg, #d1ecf1, #bee5eb);
+            border: 1px solid #b6effb;
+        }
+        
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+        }
+        
+        .is-invalid {
+            border-color: #dc3545;
+        }
+        
+        .is-valid {
+            border-color: #198754;
+        }
+        
+        .stat-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+        }
+    </style>
+}

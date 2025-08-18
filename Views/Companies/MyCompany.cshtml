@@ -8,7 +8,7 @@
     <ul>
         @foreach (var p in Model.Projects)
         {
-            <li><a asp-controller="Projects" asp-action="Details" asp-route-id="@p.Id">@p.Name</a></li>
+            <li><a asp-controller="Projects" asp-action="Edit" asp-route-id="@p.Id">@p.Name</a></li>
         }
     </ul>
 

@@ -6,7 +6,7 @@ using TaskManagementMvc.Models;
 
 namespace TaskManagementMvc.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.SystemAdmin)]
     public class PermissionsController : Controller
     {
         private readonly TaskManagementContext _context;

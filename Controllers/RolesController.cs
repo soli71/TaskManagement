@@ -8,7 +8,7 @@ using TaskManagementMvc.Models.ViewModels;
 
 namespace TaskManagementMvc.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.ViewRoles)]
     public class RolesController : Controller
     {
         private readonly RoleManager<ApplicationRole> _roleManager;
@@ -38,6 +38,7 @@ namespace TaskManagementMvc.Controllers
             return View(roles);
         }
 
+        [Authorize(Policy = Permissions.CreateRoles)]
         public async Task<IActionResult> Create()
         {
             var permissions = await GetPermissionsGroupedAsync();
@@ -47,6 +48,7 @@ namespace TaskManagementMvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.CreateRoles)]
         public async Task<IActionResult> Create(CreateRoleViewModel model)
         {
             if (ModelState.IsValid)
@@ -84,6 +86,7 @@ namespace TaskManagementMvc.Controllers
             return View(model);
         }
 
+        [Authorize(Policy = Permissions.EditRoles)]
         public async Task<IActionResult> Edit(int id)
         {
             var role = await _roleManager.FindByIdAsync(id.ToString());
@@ -123,6 +126,7 @@ namespace TaskManagementMvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.EditRoles)]
         public async Task<IActionResult> Edit(int id, EditRoleViewModel model)
         {
             if (id != model.Id)
@@ -168,12 +172,21 @@ namespace TaskManagementMvc.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = Permissions.DeleteRoles)]
         public async Task<IActionResult> Delete(int id)
         {
             var role = await _roleManager.FindByIdAsync(id.ToString());
             if (role == null)
             {
                 return NotFound();
+            }
+
+            // Check if role is a system role (cannot be deleted)
+            var systemRoles = new[] { "SystemAdmin", "SystemManager", "CompanyManager" };
+            if (systemRoles.Contains(role.Name))
+            {
+                TempData["ErrorMessage"] = "نقش‌های سیستمی قابل حذف نیستند.";
+                return RedirectToAction(nameof(Index));
             }
 
             // Check if role is assigned to any users

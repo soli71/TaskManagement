@@ -1,15 +1,38 @@
 @model TaskManagementMvc.Models.Grade
 @{ ViewData["Title"] = "ویرایش گرید"; }
-<h2>ویرایش گرید</h2>
-<form asp-action="Edit">
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">ویرایش گرید</h2>
+    <corp-btn asp-action="Index" variant="outline" icon="bi-arrow-right" dense>بازگشت</corp-btn>
+</div>
+<form asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
-    <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
-        <input asp-for="Name" class="form-control" />
+    <div class="row">
+        <div class="col-md-4"><corp-input asp-for="Name" required dense icon="bi-tag" placeholder="نام"></corp-input></div>
+        <div class="col-md-4"><corp-input asp-for="HourlyRate" required dense icon="bi-cash-coin" placeholder="نرخ ساعتی"></corp-input></div>
+        @if (User.IsInRole("SystemAdmin"))
+        {
+            var currentCompany = Model.CompanyId?.ToString();
+            <div class="col-md-4">
+                <corp-select asp-for="CompanyId" placeholder="انتخاب شرکت" icon="bi-building" dense>
+                    <option value="">-- انتخاب شرکت --</option>
+                    @foreach (var company in ViewBag.Companies)
+                    {
+                        if (company.Value == currentCompany)
+                        {
+                            <option value="@company.Value" selected>@company.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@company.Value">@company.Text</option>
+                        }
+                    }
+                </corp-select>
+            </div>
+        }
     </div>
-    <div class="mb-3">
-        <label asp-for="HourlyRate" class="form-label"></label>
-        <input asp-for="HourlyRate" class="form-control" />
+    <div class="d-flex gap-2 mt-3">
+        <corp-btn variant="success" icon="bi-save" dense>ذخیره</corp-btn>
+        <corp-btn asp-action="Index" variant="outline" icon="bi-x" dense>انصراف</corp-btn>
     </div>
-    <button type="submit" class="btn btn-primary">ذخیره</button>
 </form>

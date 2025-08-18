@@ -1,0 +1,16 @@
+@model TaskManagementMvc.Models.InvoiceSchedule
+@{
+    ViewData["Title"] = "حذف زمان‌بندی";
+}
+<div class="container" dir="rtl">
+    <h2>حذف زمان‌بندی</h2>
+    <div class="alert alert-warning mt-3">
+        آیا از حذف زمان‌بندی <strong>@Model.Name</strong> مطمئن هستید؟ این عمل قابل بازگشت نیست.
+    </div>
+    <form asp-action="DeleteConfirmed" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">حذف</button>
+        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+    </form>
+</div>

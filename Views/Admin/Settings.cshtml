@@ -1,0 +1,134 @@
+@model TaskManagementMvc.Models.ViewModels.AdminSettingsViewModel
+@{
+    ViewData["Title"] = "تنظیمات سیستم";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="bi bi-gear-fill"></i>
+                        تنظیمات سیستم اعلان‌رسانی
+                    </h3>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- وضعیت فعلی سیستم -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card @(Model.UseRedis ? "border-success" : "border-warning")">
+                                <div class="card-body text-center">
+                                    <i class="bi @(Model.UseRedis ? "bi-check-circle-fill text-success" : "bi-exclamation-triangle-fill text-warning") fs-1"></i>
+                                    <h5 class="card-title mt-2">وضعیت Redis</h5>
+                                    <p class="card-text">@(Model.UseRedis ? "فعال" : "غیرفعال")</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-clock-fill text-info fs-1"></i>
+                                    <h5 class="card-title mt-2">مدت نگهداری</h5>
+                                    <p class="card-text">@Model.RedisTtlDays روز</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- اطلاعات اتصال -->
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-info-circle"></i>
+                            اطلاعات اتصال Redis
+                        </h6>
+                        <p class="mb-0">
+                            <strong>رشته اتصال:</strong> <code>@Model.RedisConnectionString</code>
+                        </p>
+                    </div>
+
+                    <!-- دکمه‌های آزمایش -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <form asp-action="TestNotification" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-bell"></i>
+                                    آزمایش ارسال اعلان
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-4">
+                            <form asp-action="TestRedisConnection" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-info w-100" @(!Model.UseRedis ? "disabled" : "")>
+                                    <i class="bi bi-database-check"></i>
+                                    آزمایش اتصال Redis
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="@Url.Action("Index", "Notifications")" class="btn btn-success w-100">
+                                <i class="bi bi-list-check"></i>
+                                مدیریت اعلان‌ها
+                            </a>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- راهنمای تغییر تنظیمات -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-lightbulb"></i>
+                                راهنمای تغییر تنظیمات
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p>برای تغییر تنظیمات سیستم اعلان‌رسانی، فایل <code>appsettings.json</code> را ویرایش کنید:</p>
+                            
+                            <pre class="bg-light p-3 rounded"><code>{
+  "Notifications": {
+    "UseRedis": @(Model.UseRedis ? "true" : "false"),
+    "RedisTtlDays": @Model.RedisTtlDays
+  },
+  "ConnectionStrings": {
+    "Redis": "@Model.RedisConnectionString"
+  }
+}</code></pre>
+
+                            <div class="alert alert-warning mt-3" role="alert">
+                                <strong>توجه:</strong> پس از تغییر تنظیمات، نیاز به راه‌اندازی مجدد اپلیکیشن دارید.
+                            </div>
+
+                            <h6 class="mt-3">مزایای فعال‌سازی Redis:</h6>
+                            <ul>
+                                <li>ذخیره‌سازی دائمی اعلان‌ها</li>
+                                <li>دسترسی به تاریخچه اعلان‌ها</li>
+                                <li>قابلیت scale کردن در محیط‌های چندسرور</li>
+                                <li>بهبود کارایی سیستم</li>
+                            </ul>
+
+                            <h6 class="mt-3">حالت بدون Redis:</h6>
+                            <ul>
+                                <li>اعلان‌ها فقط real-time ارسال می‌شوند</li>
+                                <li>تاریخچه اعلان‌ها نگهداری نمی‌شود</li>
+                                <li>برای محیط‌های کوچک و تست مناسب است</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh page every 30 seconds to show current status
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+    </script>
+}

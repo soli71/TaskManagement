@@ -1,19 +1,24 @@
 @model IEnumerable<TaskManagementMvc.Models.Invoice>
-@{ ViewData["Title"] = "صورتحساب‌ها"; }
-<h2>صورتحساب‌ها</h2>
-<p><a class="btn btn-primary" asp-action="Create">صورتحساب جدید</a></p>
-<table class="table table-striped">
-    <thead><tr><th>شناسه</th><th>تاریخ</th><th>ایمیل</th><th>مبلغ</th><th></th></tr></thead>
-    <tbody>
-    @foreach (var i in Model)
-    {
-        <tr>
-            <td>@i.InvoiceNumber</td>
-            <td>@i.InvoiceDate.ToString("yyyy-MM-dd")</td>
-            <td>@i.CustomerEmail</td>
-            <td>@(i.Lines?.Sum(l => l.Amount) ?? 0).ToString("C")</td>
-            <td><a asp-action="Details" asp-route-id="@i.Id">جزئیات</a></td>
-        </tr>
-    }
-    </tbody>
-</table>
+@{
+    ViewData["Title"] = "صورتحساب‌ها";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="m-0">صورتحساب‌ها</h2>
+    <corp-btn variant="primary" icon="bi-plus" asp-action="Create" dense>صورتحساب جدید</corp-btn>
+</div>
+
+<corp-table headers="شناسه,تاریخ,ایمیل,مبلغ,عملیات" striped hover dense caption="لیست صورتحساب‌ها">
+@foreach (var i in Model)
+{
+    <tr>
+        <td>@i.InvoiceNumber</td>
+        <td>@i.InvoiceDate.ToPersianDate()</td>
+        <td>@i.CustomerEmail</td>
+        <td>@(i.Lines?.Sum(l => l.Amount) ?? 0).ToString("C")</td>
+        <td class="text-nowrap">
+            <corp-btn variant="outline" icon="bi-eye" asp-action="Details" asp-route-id="@i.Id" dense>جزئیات</corp-btn>
+        </td>
+    </tr>
+}
+</corp-table>

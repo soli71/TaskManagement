@@ -1,54 +1,207 @@
 @model ProjectFormViewModel
 
 @{
+    ViewData["Title"] = "ایجاد پروژه جدید";
     var companies = Model.Companies;
     var managers = Model.ProjectManagers;
+    // Precompute select lists to simplify Razor attribute expressions and avoid nested parentheses issues
+    var companySelectList = new SelectList(companies, "Id", "Name", Model.CompanyId);
+    var managerSelectList = new SelectList(managers, "Id", "FullName", Model.ProjectManagerId);
+    var prioritySelectList = Html.GetEnumSelectList<TaskManagementMvc.Models.ProjectPriority>();
 }
 
 <div class="container">
-    <h2>ایجاد پروژه</h2>
-    <form asp-action="Create" method="post">
-        <div class="mb-3">
-            <label asp-for="Name" class="form-label"></label>
-            <input asp-for="Name" class="form-control" />
-            <span asp-validation-for="Name" class="text-danger"></span>
-        </div>
-        <div class="mb-3">
-            <label asp-for="Description" class="form-label"></label>
-            <textarea asp-for="Description" class="form-control"></textarea>
-        </div>
-        <div class="mb-3">
-            <label asp-for="Code" class="form-label"></label>
-            <input asp-for="Code" class="form-control" />
-        </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="CompanyId" class="form-label">شرکت</label>
-                <select asp-for="CompanyId" class="form-select" asp-items="@(new SelectList(companies, "Id", "Name", Model.CompanyId))"></select>
-                <span asp-validation-for="CompanyId" class="text-danger"></span>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label asp-for="ProjectManagerId" class="form-label">مدیر پروژه</label>
-                <select asp-for="ProjectManagerId" class="form-select" asp-items="@(new SelectList(managers, "Id", "FullName", Model.ProjectManagerId))"></select>
+    <div class="page-header">
+        <div class="page-title">
+            <i class="bi bi-folder-plus"></i>
+            <div>
+                <h2>ایجاد پروژه جدید</h2>
+                <p class="page-subtitle">پروژه جدید خود را تعریف کنید</p>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label asp-for="StartDate" class="form-label"></label>
-                <input asp-for="StartDate" class="form-control" />
-            </div>
-            <div class="col-md-6 mb-3">
-                <label asp-for="EstimatedEndDate" class="form-label"></label>
-                <input asp-for="EstimatedEndDate" class="form-control" />
+        <div class="page-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right"></i>
+                بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        اطلاعات اساسی پروژه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" id="createProjectForm">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <corp-input asp-for="Name" placeholder="نام پروژه را وارد کنید" icon="bi-folder" required dense></corp-input>
+                            </div>
+                            <div class="col-md-4">
+                                <corp-input asp-for="Code" placeholder="کد به صورت خودکار تولید می‌شود" icon="bi-hash" readonly dense></corp-input>
+                                <div class="form-text mt-n2 mb-3">کد پروژه به صورت خودکار تولید شده است</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label corp-label">@Html.DisplayNameFor(m=>m.Description)</label>
+                            <textarea asp-for="Description" class="form-control corp-input" rows="4" placeholder="توضیحات تفصیلی پروژه را وارد کنید"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        @if (User.IsInRole("SystemAdmin"))
+                        {
+                            <corp-select asp-for="CompanyId" asp-items="companySelectList" placeholder="انتخاب شرکت" icon="bi-building" required dense></corp-select>
+                        }
+                        else
+                        {
+                            <input asp-for="CompanyId" type="hidden" />
+                            @if (companies.Any())
+                            {
+                                <div class="mb-3 corp-field">
+                                    <label class="form-label corp-label">شرکت</label>
+                                    <div class="form-control-plaintext bg-light p-3 rounded border">
+                                        <i class="bi bi-building text-primary me-2"></i>
+                                        <strong>@companies.First().Name</strong>
+                                        <div class="form-text mt-1">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            پروژه برای شرکت فعلی شما ایجاد خواهد شد
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <corp-select asp-for="ProjectManagerId" asp-items="managerSelectList" placeholder="انتخاب مدیر پروژه" icon="bi-person-check" dense></corp-select>
+
+                        <div class="row">
+                            <div class="col-md-6"><corp-input asp-for="StartDate" type="date" icon="bi-calendar-event" dense></corp-input></div>
+                            <div class="col-md-6"><corp-input asp-for="EstimatedEndDate" type="date" icon="bi-calendar-check" dense></corp-input></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="corp-field mb-3">
+                                    <label asp-for="Budget" class="form-label corp-label">@Html.DisplayNameFor(m=>m.Budget)</label>
+                                    <div class="corp-input-group">
+                                        <span class="corp-input-icon"><i class="bi bi-cash-coin"></i></span>
+                                        <input asp-for="Budget" class="form-control corp-input" placeholder="0" />
+                                        <span class="input-group-text">تومان</span>
+                                    </div>
+                                    <span asp-validation-for="Budget" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <corp-select asp-for="Priority" asp-items="prioritySelectList" placeholder="اولویت" icon="bi-flag" dense></corp-select>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 pt-3">
+                            <corp-btn variant="success" icon="bi-check-lg" dense>ایجاد پروژه</corp-btn>
+                            <corp-btn variant="outline" icon="bi-x-lg" asp-action="Index" dense>انصراف</corp-btn>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="mb-3">
-            <label asp-for="Budget" class="form-label"></label>
-            <input asp-for="Budget" class="form-control" />
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        راهنما
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <div class="text-primary">
+                            <i class="bi bi-info-circle"></i>
+                        </div>
+                        <div>
+                            <strong>نام پروژه</strong>
+                            <p class="text-muted small mb-0">نام منحصر به فرد و توصیفی برای پروژه انتخاب کنید</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <div class="text-primary">
+                            <i class="bi bi-hash"></i>
+                        </div>
+                        <div>
+                            <strong>کد پروژه</strong>
+                            <p class="text-muted small mb-0">کد پروژه به صورت خودکار بر اساس سال جاری تولید می‌شود</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <div class="text-primary">
+                            <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <div>
+                            <strong>تاریخ‌ها</strong>
+                            <p class="text-muted small mb-0">تاریخ شروع و پایان پیش‌بینی شده پروژه را مشخص کنید</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="text-primary">
+                            <i class="bi bi-currency-exchange"></i>
+                        </div>
+                        <div>
+                            <strong>بودجه</strong>
+                            <p class="text-muted small mb-0">بودجه پیش‌بینی شده برای انجام پروژه</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">ثبت</button>
-        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
-    </form>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus on project name input
+            document.querySelector('#Name').focus();
+
+            // Format budget input
+            const budgetInput = document.querySelector('#Budget');
+            if (budgetInput) {
+                budgetInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/,/g, '');
+                    if (!isNaN(value) && value !== '') {
+                        e.target.value = Number(value).toLocaleString();
+                    }
+                });
+            }
+
+            // Validate dates
+            const startDateInput = document.querySelector('#StartDate');
+            const endDateInput = document.querySelector('#EstimatedEndDate');
+            
+            if (startDateInput && endDateInput) {
+                startDateInput.addEventListener('change', validateDates);
+                endDateInput.addEventListener('change', validateDates);
+                
+                function validateDates() {
+                    const startDate = new Date(startDateInput.value);
+                    const endDate = new Date(endDateInput.value);
+                    
+                    if (startDate && endDate && endDate <= startDate) {
+                        endDateInput.setCustomValidity('تاریخ پایان باید بعد از تاریخ شروع باشد');
+                    } else {
+                        endDateInput.setCustomValidity('');
+                    }
+                }
+            }
+        });
+    </script>
+}
 
 

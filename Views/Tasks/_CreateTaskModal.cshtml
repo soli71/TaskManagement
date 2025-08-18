@@ -1,0 +1,25 @@
+@model TaskFormViewModel
+<div class="modal-header">
+    <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>ایجاد تسک جدید</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<form id="createTaskForm" asp-action="Create" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+    <div class="modal-body">
+        @await Html.PartialAsync("_TaskFormFields", Model)
+        <div class="mt-4">
+            <label class="form-label fw-semibold"><i class="bi bi-paperclip me-2"></i>ضمائم</label>
+            <input type="file" name="files" class="form-control" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.zip" />
+            <div class="form-text"><i class="bi bi-info-circle me-1"></i>می‌توانید چند فایل انتخاب کنید.</div>
+        </div>
+        <div class="mt-3">
+            <label class="form-label fw-semibold"><i class="bi bi-chat-left-text me-2"></i>یادداشت اولیه</label>
+            <textarea name="initialComment" class="form-control" rows="3" placeholder="توضیح یا یادداشت اولیه..."></textarea>
+        </div>
+        <input type="hidden" asp-for="ProjectId" />
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>انصراف</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i>ایجاد</button>
+    </div>
+</form>

@@ -2,25 +2,16 @@
 
 <div class="container">
     <h2>کاربران شرکت: @Model.Name</h2>
-    <table class="table table-striped">
-        <thead>
+    <corp-table headers="نام,نام کاربری,نقش‌ها" striped small dense>
+        @foreach (var u in Model.Users)
+        {
             <tr>
-                <th>نام</th>
-                <th>نام کاربری</th>
-                <th>نقش‌ها</th>
+                <td>@u.FullName</td>
+                <td>@u.UserName</td>
+                <td>@string.Join(", ", u.UserRoles.Select(ur => ur.Role.Name))</td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach (var u in Model.Users)
-            {
-                <tr>
-                    <td>@u.FullName</td>
-                    <td>@u.UserName</td>
-                    <td>@string.Join(", ", u.UserRoles.Select(ur => ur.Role.Name))</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+        }
+    </corp-table>
 </div>
 
 

@@ -45,7 +45,7 @@ namespace TaskManagementMvc.Models
         public ProjectPriority Priority { get; set; } = ProjectPriority.Medium;
 
         [Display(Name = "وضعیت")]
-        public ProjectStatus Status { get; set; } = ProjectStatus.Active;
+        public ProjectStatus? Status { get; set; }
 
         [Display(Name = "وضعیت")]
         public bool IsActive { get; set; } = true;
@@ -79,6 +79,7 @@ namespace TaskManagementMvc.Models
 
         public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
         public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        public virtual ICollection<ProjectAccess> ProjectAccess { get; set; } = new List<ProjectAccess>();
     }
 
     public enum ProjectPriority

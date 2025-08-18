@@ -69,7 +69,7 @@ namespace TaskManagementMvc.Models
 
         // Navigation Properties
         [ForeignKey("PerformerId")]
-        public virtual Performer? Performer { get; set; }
+        public virtual ApplicationUser? Performer { get; set; }
 
         [ForeignKey("CreatedById")]
         public virtual ApplicationUser? CreatedBy { get; set; }
@@ -86,6 +86,8 @@ namespace TaskManagementMvc.Models
 
     public enum TaskStatus
     {
+        [Display(Name = "شروع نشده")]
+        NotStarted = 0,
         [Display(Name = "در حال انجام")]
         InProgress = 1,
         [Display(Name = "تکمیل شده")]

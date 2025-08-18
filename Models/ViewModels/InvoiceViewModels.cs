@@ -37,4 +37,25 @@ namespace TaskManagementMvc.Models.ViewModels
         public int? TaskId { get; set; }
         public string? TaskTitle { get; set; }
     }
+
+    // View model dedicated for Create action binding (only required fields)
+    public class InvoiceCreateViewModel
+    {
+        public DateTime InvoiceDate { get; set; } = DateTime.Now;
+        public string? Description { get; set; }
+        public string? CustomerName { get; set; }
+        public List<TaskSelectionViewModel> Tasks { get; set; } = new();
+    }
+
+    public class TaskSelectionViewModel
+    {
+        public int TaskId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public double HoursAvailable { get; set; }
+        public bool Selected { get; set; }
+        public double HoursForInvoice { get; set; }
+        public string? PerformerName { get; set; }
+        public DateTime? StartAt { get; set; }
+    }
 }

@@ -59,7 +59,6 @@ namespace TaskManagementMvc.Models
         public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
         public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
         public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
-        public virtual ICollection<Performer> Performers { get; set; } = new List<Performer>();
         public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
     }
 }

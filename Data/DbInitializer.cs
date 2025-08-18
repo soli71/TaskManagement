@@ -14,45 +14,69 @@ namespace TaskManagementMvc.Data
             {
                 var permissions = new[]
                 {
-                    // Task Management Permissions
-                    new Permission { Name = "مشاهده تسک‌ها", Code = "Tasks.View", Description = "مشاهده لیست تسک‌ها", Group = "مدیریت تسک" },
-                    new Permission { Name = "ایجاد تسک", Code = "Tasks.Create", Description = "ایجاد تسک جدید", Group = "مدیریت تسک" },
-                    new Permission { Name = "ویرایش تسک", Code = "Tasks.Edit", Description = "ویرایش تسک‌ها", Group = "مدیریت تسک" },
-                    new Permission { Name = "حذف تسک", Code = "Tasks.Delete", Description = "حذف تسک‌ها", Group = "مدیریت تسک" },
-                    new Permission { Name = "آرشیو تسک", Code = "Tasks.Archive", Description = "آرشیو کردن تسک‌ها", Group = "مدیریت تسک" },
+                    // System Management Permissions
+                    new Permission { Name = "مدیریت سیستم", Code = Permissions.ManageSystem, Description = "دسترسی کامل به تمام بخش‌های سیستم", Group = "مدیریت سیستم" },
+                    new Permission { Name = "مشاهده لاگ‌های سیستم", Code = Permissions.ViewSystemLogs, Description = "مشاهده لاگ‌های سیستم", Group = "مدیریت سیستم" },
+                    new Permission { Name = "مدیریت تمام شرکت‌ها", Code = Permissions.ManageAllCompanies, Description = "مدیریت تمام شرکت‌ها", Group = "مدیریت سیستم" },
+                    new Permission { Name = "مدیریت تمام کاربران", Code = Permissions.ManageAllUsers, Description = "مدیریت تمام کاربران", Group = "مدیریت سیستم" },
+                    new Permission { Name = "مدیریت نقش‌های سیستم", Code = Permissions.ManageSystemRoles, Description = "مدیریت نقش‌های سیستم", Group = "مدیریت سیستم" },
 
-                    // Invoice Management Permissions
-                    new Permission { Name = "مشاهده فاکتورها", Code = "Invoices.View", Description = "مشاهده لیست فاکتورها", Group = "مدیریت فاکتور" },
-                    new Permission { Name = "ایجاد فاکتور", Code = "Invoices.Create", Description = "ایجاد فاکتور جدید", Group = "مدیریت فاکتور" },
-                    new Permission { Name = "ویرایش فاکتور", Code = "Invoices.Edit", Description = "ویرایش فاکتورها", Group = "مدیریت فاکتور" },
-                    new Permission { Name = "حذف فاکتور", Code = "Invoices.Delete", Description = "حذف فاکتورها", Group = "مدیریت فاکتور" },
+                    // Company Management Permissions
+                    new Permission { Name = "مدیریت شرکت", Code = Permissions.ManageCompany, Description = "مدیریت شرکت", Group = "مدیریت شرکت" },
+                    new Permission { Name = "مشاهده شرکت", Code = Permissions.ViewCompany, Description = "مشاهده اطلاعات شرکت", Group = "مدیریت شرکت" },
+                    new Permission { Name = "مدیریت کاربران شرکت", Code = Permissions.ManageCompanyUsers, Description = "مدیریت کاربران شرکت", Group = "مدیریت شرکت" },
+                    new Permission { Name = "مشاهده کاربران شرکت", Code = Permissions.ViewCompanyUsers, Description = "مشاهده کاربران شرکت", Group = "مدیریت شرکت" },
+                    new Permission { Name = "مدیریت پروژه‌های شرکت", Code = Permissions.ManageCompanyProjects, Description = "مدیریت پروژه‌های شرکت", Group = "مدیریت شرکت" },
+                    new Permission { Name = "مشاهده پروژه‌های شرکت", Code = Permissions.ViewCompanyProjects, Description = "مشاهده پروژه‌های شرکت", Group = "مدیریت شرکت" },
+
+                    // Project Management Permissions
+                    new Permission { Name = "مدیریت پروژه‌ها", Code = Permissions.ManageProjects, Description = "مدیریت پروژه‌ها", Group = "مدیریت پروژه" },
+                    new Permission { Name = "مشاهده پروژه‌ها", Code = Permissions.ViewProjects, Description = "مشاهده پروژه‌ها", Group = "مدیریت پروژه" },
+                    new Permission { Name = "ایجاد پروژه", Code = Permissions.CreateProjects, Description = "ایجاد پروژه جدید", Group = "مدیریت پروژه" },
+                    new Permission { Name = "ویرایش پروژه", Code = Permissions.EditProjects, Description = "ویرایش پروژه‌ها", Group = "مدیریت پروژه" },
+                    new Permission { Name = "حذف پروژه", Code = Permissions.DeleteProjects, Description = "حذف پروژه‌ها", Group = "مدیریت پروژه" },
+                    new Permission { Name = "مدیریت دسترسی پروژه", Code = Permissions.ManageProjectAccess, Description = "مدیریت دسترسی به پروژه‌ها", Group = "مدیریت پروژه" },
+                    new Permission { Name = "مشاهده دسترسی پروژه", Code = Permissions.ViewProjectAccess, Description = "مشاهده دسترسی‌های پروژه", Group = "مدیریت پروژه" },
+
+                    // Task Management Permissions
+                    new Permission { Name = "مدیریت وظایف", Code = Permissions.ManageTasks, Description = "مدیریت وظایف", Group = "مدیریت تسک" },
+                    new Permission { Name = "مشاهده وظایف", Code = Permissions.ViewTasks, Description = "مشاهده وظایف", Group = "مدیریت تسک" },
+                    new Permission { Name = "ایجاد وظیفه", Code = Permissions.CreateTasks, Description = "ایجاد وظیفه جدید", Group = "مدیریت تسک" },
+                    new Permission { Name = "ویرایش وظیفه", Code = Permissions.EditTasks, Description = "ویرایش وظایف", Group = "مدیریت تسک" },
+                    new Permission { Name = "حذف وظیفه", Code = Permissions.DeleteTasks, Description = "حذف وظایف", Group = "مدیریت تسک" },
+                    new Permission { Name = "آرشیو وظایف", Code = Permissions.ArchiveTasks, Description = "آرشیو کردن وظایف", Group = "مدیریت تسک" },
+                    new Permission { Name = "تغییر وضعیت وظیفه", Code = Permissions.ChangeTaskStatus, Description = "تغییر وضعیت وظایف", Group = "مدیریت تسک" },
+                    new Permission { Name = "مشاهده وظایف آرشیو شده", Code = Permissions.ViewArchivedTasks, Description = "مشاهده وظایف آرشیو شده", Group = "مدیریت تسک" },
+                    new Permission { Name = "مدیریت ضمائم وظیفه", Code = Permissions.ManageTaskAttachments, Description = "مدیریت ضمائم وظایف", Group = "مدیریت تسک" },
 
                     // User Management Permissions
-                    new Permission { Name = "مشاهده کاربران", Code = "Users.View", Description = "مشاهده لیست کاربران", Group = "مدیریت کاربران" },
-                    new Permission { Name = "ایجاد کاربر", Code = "Users.Create", Description = "ایجاد کاربر جدید", Group = "مدیریت کاربران" },
-                    new Permission { Name = "ویرایش کاربر", Code = "Users.Edit", Description = "ویرایش کاربران", Group = "مدیریت کاربران" },
-                    new Permission { Name = "حذف کاربر", Code = "Users.Delete", Description = "حذف کاربران", Group = "مدیریت کاربران" },
+                    new Permission { Name = "مشاهده کاربران", Code = Permissions.ViewUsers, Description = "مشاهده لیست کاربران", Group = "مدیریت کاربران" },
+                    new Permission { Name = "ایجاد کاربر", Code = Permissions.CreateUsers, Description = "ایجاد کاربر جدید", Group = "مدیریت کاربران" },
+                    new Permission { Name = "ویرایش کاربر", Code = Permissions.EditUsers, Description = "ویرایش کاربران", Group = "مدیریت کاربران" },
+                    new Permission { Name = "حذف کاربر", Code = Permissions.DeleteUsers, Description = "حذف کاربران", Group = "مدیریت کاربران" },
+                    new Permission { Name = "تغییر رمز عبور کاربر", Code = Permissions.ChangeUserPassword, Description = "تغییر رمز عبور کاربران", Group = "مدیریت کاربران" },
+                    new Permission { Name = "مدیریت نقش‌های کاربر", Code = Permissions.ManageUserRoles, Description = "مدیریت نقش‌های کاربران", Group = "مدیریت کاربران" },
+                    new Permission { Name = "مشاهده جزئیات کاربر", Code = Permissions.ViewUserDetails, Description = "مشاهده جزئیات کاربران", Group = "مدیریت کاربران" },
 
                     // Role Management Permissions
-                    new Permission { Name = "مشاهده نقش‌ها", Code = "Roles.View", Description = "مشاهده لیست نقش‌ها", Group = "مدیریت نقش‌ها" },
-                    new Permission { Name = "ایجاد نقش", Code = "Roles.Create", Description = "ایجاد نقش جدید", Group = "مدیریت نقش‌ها" },
-                    new Permission { Name = "ویرایش نقش", Code = "Roles.Edit", Description = "ویرایش نقش‌ها", Group = "مدیریت نقش‌ها" },
-                    new Permission { Name = "حذف نقش", Code = "Roles.Delete", Description = "حذف نقش‌ها", Group = "مدیریت نقش‌ها" },
+                    new Permission { Name = "مشاهده نقش‌ها", Code = Permissions.ViewRoles, Description = "مشاهده لیست نقش‌ها", Group = "مدیریت نقش‌ها" },
+                    new Permission { Name = "ایجاد نقش", Code = Permissions.CreateRoles, Description = "ایجاد نقش جدید", Group = "مدیریت نقش‌ها" },
+                    new Permission { Name = "ویرایش نقش", Code = Permissions.EditRoles, Description = "ویرایش نقش‌ها", Group = "مدیریت نقش‌ها" },
+                    new Permission { Name = "حذف نقش", Code = Permissions.DeleteRoles, Description = "حذف نقش‌ها", Group = "مدیریت نقش‌ها" },
 
-                    // Permission Management Permissions
-                    new Permission { Name = "مشاهده دسترسی‌ها", Code = "Permissions.View", Description = "مشاهده لیست دسترسی‌ها", Group = "مدیریت دسترسی‌ها" },
-                    new Permission { Name = "ایجاد دسترسی", Code = "Permissions.Create", Description = "ایجاد دسترسی جدید", Group = "مدیریت دسترسی‌ها" },
-                    new Permission { Name = "ویرایش دسترسی", Code = "Permissions.Edit", Description = "ویرایش دسترسی‌ها", Group = "مدیریت دسترسی‌ها" },
-                    new Permission { Name = "حذف دسترسی", Code = "Permissions.Delete", Description = "حذف دسترسی‌ها", Group = "مدیریت دسترسی‌ها" },
+                    // Grade Management Permissions
+                    new Permission { Name = "مدیریت رتبه‌ها", Code = Permissions.ManageGrades, Description = "مدیریت رتبه‌ها", Group = "مدیریت رتبه‌ها" },
+                    new Permission { Name = "مشاهده رتبه‌ها", Code = Permissions.ViewGrades, Description = "مشاهده رتبه‌ها", Group = "مدیریت رتبه‌ها" },
+
+                    // Invoice Management Permissions
+                    new Permission { Name = "مدیریت فاکتورها", Code = Permissions.ManageInvoices, Description = "مدیریت فاکتورها", Group = "مدیریت فاکتور" },
+                    new Permission { Name = "مشاهده فاکتورها", Code = Permissions.ViewInvoices, Description = "مشاهده فاکتورها", Group = "مدیریت فاکتور" },
+                    new Permission { Name = "ایجاد فاکتور", Code = Permissions.CreateInvoices, Description = "ایجاد فاکتور جدید", Group = "مدیریت فاکتور" },
+                    new Permission { Name = "ویرایش فاکتور", Code = Permissions.EditInvoices, Description = "ویرایش فاکتورها", Group = "مدیریت فاکتور" },
 
                     // Email Template Permissions
-                    new Permission { Name = "مشاهده قالب‌های ایمیل", Code = "EmailTemplates.View", Description = "مشاهده لیست قالب‌های ایمیل", Group = "مدیریت قالب‌های ایمیل" },
-                    new Permission { Name = "ایجاد قالب ایمیل", Code = "EmailTemplates.Create", Description = "ایجاد قالب ایمیل جدید", Group = "مدیریت قالب‌های ایمیل" },
-                    new Permission { Name = "ویرایش قالب ایمیل", Code = "EmailTemplates.Edit", Description = "ویرایش قالب‌های ایمیل", Group = "مدیریت قالب‌های ایمیل" },
-                    new Permission { Name = "حذف قالب ایمیل", Code = "EmailTemplates.Delete", Description = "حذف قالب‌های ایمیل", Group = "مدیریت قالب‌های ایمیل" },
-
-                    // System Management Permissions
-                    new Permission { Name = "مدیریت سیستم", Code = "System.Manage", Description = "دسترسی کامل به تمام بخش‌های سیستم", Group = "مدیریت سیستم" }
+                    new Permission { Name = "مدیریت قالب‌های ایمیل", Code = Permissions.ManageEmailTemplates, Description = "مدیریت قالب‌های ایمیل", Group = "مدیریت قالب‌های ایمیل" },
+                    new Permission { Name = "مشاهده قالب‌های ایمیل", Code = Permissions.ViewEmailTemplates, Description = "مشاهده قالب‌های ایمیل", Group = "مدیریت قالب‌های ایمیل" }
                 };
 
                 context.Permissions.AddRange(permissions);
@@ -64,9 +88,10 @@ namespace TaskManagementMvc.Data
             {
                 var roles = new[]
                 {
-                    new ApplicationRole { Name = "Admin", Description = "مدیر سیستم با دسترسی کامل", IsActive = true, CreatedAt = DateTime.UtcNow },
-                    new ApplicationRole { Name = "Manager", Description = "مدیر پروژه با دسترسی محدود", IsActive = true, CreatedAt = DateTime.UtcNow },
-                    new ApplicationRole { Name = "User", Description = "کاربر عادی", IsActive = true, CreatedAt = DateTime.UtcNow }
+                    new ApplicationRole { Name = Roles.SystemAdmin, Description = "مدیر سیستم با دسترسی کامل به تمام بخش‌ها", IsActive = true, CreatedAt = DateTime.UtcNow },
+                    new ApplicationRole { Name = Roles.CompanyManager, Description = "مدیر شرکت با دسترسی به مدیریت کاربران و پروژه‌های شرکت", IsActive = true, CreatedAt = DateTime.UtcNow },
+                    new ApplicationRole { Name = Roles.ProjectManager, Description = "مدیر پروژه با دسترسی به مدیریت پروژه و وظایف", IsActive = true, CreatedAt = DateTime.UtcNow },
+                    new ApplicationRole { Name = Roles.Employee, Description = "کارمند با دسترسی به عملیات پایه", IsActive = true, CreatedAt = DateTime.UtcNow }
                 };
 
                 foreach (var role in roles)
@@ -75,62 +100,90 @@ namespace TaskManagementMvc.Data
                 }
 
                 // Assign permissions to Admin role
-                var adminRole = await roleManager.FindByNameAsync("Admin");
+                var adminRole = await roleManager.FindByNameAsync(Roles.SystemAdmin);
                 if (adminRole != null)
                 {
-                    var allPermissions = context.Permissions.ToList();
-                    foreach (var permission in allPermissions)
+                    var adminPermissions = Permissions.RolePermissions[Roles.SystemAdmin];
+                    foreach (var permissionCode in adminPermissions)
                     {
-                        context.RolePermissions.Add(new RolePermission
+                        var permission = context.Permissions.FirstOrDefault(p => p.Code == permissionCode);
+                        if (permission != null)
                         {
-                            RoleId = adminRole.Id,
-                            PermissionId = permission.Id,
-                            AssignedAt = DateTime.UtcNow,
-                            AssignedById = null,
-                            IsActive = true
-                        });
+                            context.RolePermissions.Add(new RolePermission
+                            {
+                                RoleId = adminRole.Id,
+                                PermissionId = permission.Id,
+                                AssignedAt = DateTime.UtcNow,
+                                AssignedById = null,
+                                IsActive = true
+                            });
+                        }
                     }
                 }
 
-                // Assign permissions to Manager role
-                var managerRole = await roleManager.FindByNameAsync("Manager");
-                if (managerRole != null)
+                // Assign permissions to CompanyManager role
+                var companyManagerRole = await roleManager.FindByNameAsync(Roles.CompanyManager);
+                if (companyManagerRole != null)
                 {
-                    var managerPermissions = context.Permissions
-                        .Where(p => p.Group == "مدیریت تسک" || p.Group == "مدیریت فاکتور" || p.Group == "مدیریت قالب‌های ایمیل")
-                        .ToList();
-
-                    foreach (var permission in managerPermissions)
+                    var companyManagerPermissions = Permissions.RolePermissions[Roles.CompanyManager];
+                    foreach (var permissionCode in companyManagerPermissions)
                     {
-                        context.RolePermissions.Add(new RolePermission
+                        var permission = context.Permissions.FirstOrDefault(p => p.Code == permissionCode);
+                        if (permission != null)
                         {
-                            RoleId = managerRole.Id,
-                            PermissionId = permission.Id,
-                            AssignedAt = DateTime.UtcNow,
-                            AssignedById = null,
-                            IsActive = true
-                        });
+                            context.RolePermissions.Add(new RolePermission
+                            {
+                                RoleId = companyManagerRole.Id,
+                                PermissionId = permission.Id,
+                                AssignedAt = DateTime.UtcNow,
+                                AssignedById = null,
+                                IsActive = true
+                            });
+                        }
                     }
                 }
 
-                // Assign permissions to User role
-                var userRole = await roleManager.FindByNameAsync("User");
-                if (userRole != null)
+                // Assign permissions to ProjectManager role
+                var projectManagerRole = await roleManager.FindByNameAsync(Roles.ProjectManager);
+                if (projectManagerRole != null)
                 {
-                    var userPermissions = context.Permissions
-                        .Where(p => p.Code == "Tasks.View" || p.Code == "Invoices.View")
-                        .ToList();
-
-                    foreach (var permission in userPermissions)
+                    var projectManagerPermissions = Permissions.RolePermissions[Roles.ProjectManager];
+                    foreach (var permissionCode in projectManagerPermissions)
                     {
-                        context.RolePermissions.Add(new RolePermission
+                        var permission = context.Permissions.FirstOrDefault(p => p.Code == permissionCode);
+                        if (permission != null)
                         {
-                            RoleId = userRole.Id,
-                            PermissionId = permission.Id,
-                            AssignedAt = DateTime.UtcNow,
-                            AssignedById = null,
-                            IsActive = true
-                        });
+                            context.RolePermissions.Add(new RolePermission
+                            {
+                                RoleId = projectManagerRole.Id,
+                                PermissionId = permission.Id,
+                                AssignedAt = DateTime.UtcNow,
+                                AssignedById = null,
+                                IsActive = true
+                            });
+                        }
+                    }
+                }
+
+                // Assign permissions to Employee role
+                var employeeRole = await roleManager.FindByNameAsync(Roles.Employee);
+                if (employeeRole != null)
+                {
+                    var employeePermissions = Permissions.RolePermissions[Roles.Employee];
+                    foreach (var permissionCode in employeePermissions)
+                    {
+                        var permission = context.Permissions.FirstOrDefault(p => p.Code == permissionCode);
+                        if (permission != null)
+                        {
+                            context.RolePermissions.Add(new RolePermission
+                            {
+                                RoleId = employeeRole.Id,
+                                PermissionId = permission.Id,
+                                AssignedAt = DateTime.UtcNow,
+                                AssignedById = null,
+                                IsActive = true
+                            });
+                        }
                     }
                 }
 
@@ -153,7 +206,7 @@ namespace TaskManagementMvc.Data
                 var result = await userManager.CreateAsync(adminUser, "Admin123!");
                 if (result.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                    await userManager.AddToRoleAsync(adminUser, Roles.SystemAdmin);
                 }
             }
 
@@ -195,6 +248,15 @@ namespace TaskManagementMvc.Data
                         Description = "قالب تفصیلی با جزئیات کامل تسک‌ها",
                         IsActive = true,
                         AvailableVariables = "{{InvoiceNumber}}, {{TotalAmount}}, {{IssueDate}}, {{TaskList}}, {{LineCount}}"
+                    },
+                    new EmailTemplate
+                    {
+                        Name = "قالب فاکتور با جمع افراد",
+                        Subject = "فاکتور شماره {{InvoiceNumber}} - مجموع نفرات",
+                        Body = "RAZOR:InvoicePerformerTotals",
+                        Description = "نمایش جمع ساعات و مبالغ هر فرد + اطلاعات بانکی (شبا و کارت)",
+                        IsActive = true,
+                        AvailableVariables = "{{InvoiceNumber}}, {{TotalAmount}}, {{IssueDate}}, {{TaskList}}, {{LineCount}}, {{PerformerTotals}}"
                     }
                 };
 

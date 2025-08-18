@@ -65,7 +65,7 @@
                                     <div class="col-6">
                                         <small class="text-muted d-block">
                                             <i class="bi bi-calendar3 me-1"></i>
-                                            @(task.StartAt?.ToString("MM/dd", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                            @(task.StartAt?.ToPersianDate() ?? "")
                                         </small>
                                     </div>
                                     <div class="col-6">
@@ -80,7 +80,7 @@
                             <div class="archive-info mb-3">
                                 <small class="text-muted">
                                     <i class="bi bi-archive me-1"></i>
-                                    آرشیو شده در: @(task.ArchivedAt?.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR")) ?? "")
+                                    آرشیو شده در: @(task.ArchivedAt?.ToPersianDateTime() ?? "")
                                 </small>
                                 @if (!string.IsNullOrEmpty(task.ArchivedBy))
                                 {

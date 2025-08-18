@@ -3,10 +3,14 @@
 <div class="container">
     <h2>تغییر وضعیت شرکت</h2>
     <p>آیا از تغییر وضعیت شرکت <strong>@Model.Name</strong> مطمئن هستید؟</p>
-    <form asp-action="ToggleActive" method="post">
+    <form asp-action="ToggleActive" method="post" class="d-flex gap-2">
         <input type="hidden" name="id" value="@Model.Id" />
-        <button type="submit" class="btn btn-warning">تغییر وضعیت</button>
-        <a asp-action="Index" class="btn btn-secondary">انصراف</a>
+        <corp-btn variant="warning" icon="bi-shuffle" type="submit">تغییر وضعیت</corp-btn>
+        <corp-btn variant="outline" icon="bi-x" asp-action="Index">انصراف</corp-btn>
+        @if (Model.IsActive)
+        {<corp-badge variant="success" dense icon="bi-check2">اکنون فعال</corp-badge>}
+        else
+        {<corp-badge variant="danger" dense icon="bi-x">اکنون غیرفعال</corp-badge>}
     </form>
 </div>
 

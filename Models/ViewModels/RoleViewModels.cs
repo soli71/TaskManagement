@@ -17,6 +17,7 @@ namespace TaskManagementMvc.Models.ViewModels
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public bool IsActive { get; set; } = true;
         public List<string> SelectedPermissions { get; set; } = new List<string>();
         public List<RolePermissionViewModel> CurrentPermissions { get; set; } = new List<RolePermissionViewModel>();
         public List<Permission> Permissions { get; set; } = new List<Permission>();
@@ -46,6 +47,7 @@ namespace TaskManagementMvc.Models.ViewModels
     public class PermissionGroupViewModel
     {
         public string GroupName { get; set; } = string.Empty;
+        public string Group { get; set; } = string.Empty;
         public List<PermissionViewModel> Permissions { get; set; } = new List<PermissionViewModel>();
     }
 
@@ -55,7 +57,9 @@ namespace TaskManagementMvc.Models.ViewModels
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Group { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
         public bool IsSelected { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 
     public class RoleFormViewModel

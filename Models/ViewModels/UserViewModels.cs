@@ -10,10 +10,19 @@ namespace TaskManagementMvc.Models.ViewModels
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
+        public string? Notes { get; set; }
         public int? CompanyId { get; set; }
+        public int? GradeId { get; set; }
         public bool IsActive { get; set; } = true;
+        public string? IbanNumber { get; set; }
+        public string? CardNumber { get; set; }
+        public string Password { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
         public List<string> SelectedRoles { get; set; } = new List<string>();
+        
+        // Lists for dropdowns
         public List<Company> Companies { get; set; } = new List<Company>();
+        public List<Grade> Grades { get; set; } = new List<Grade>();
         public List<ApplicationRole> Roles { get; set; } = new List<ApplicationRole>();
     }
 
@@ -24,11 +33,18 @@ namespace TaskManagementMvc.Models.ViewModels
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
+        public string? Notes { get; set; }
         public int? CompanyId { get; set; }
+        public int? GradeId { get; set; }
         public bool IsActive { get; set; } = true;
+        public string? IbanNumber { get; set; }
+        public string? CardNumber { get; set; }
         public List<string> SelectedRoles { get; set; } = new List<string>();
         public List<UserRoleViewModel> CurrentRoles { get; set; } = new List<UserRoleViewModel>();
+        
+        // Lists for dropdowns
         public List<Company> Companies { get; set; } = new List<Company>();
+        public List<Grade> Grades { get; set; } = new List<Grade>();
         public List<ApplicationRole> Roles { get; set; } = new List<ApplicationRole>();
     }
 
@@ -56,6 +72,7 @@ namespace TaskManagementMvc.Models.ViewModels
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
         public string? CompanyName { get; set; }
         public bool IsActive { get; set; }
         public List<string> Roles { get; set; } = new List<string>();

@@ -1,0 +1,59 @@
+@model TaskManagementMvc.Models.InvoiceSchedule
+@{
+    ViewData["Title"] = "جزئیات زمان‌بندی";
+}
+<div class="container" dir="rtl">
+    <h2>جزئیات زمان‌بندی: @Model.Name</h2>
+    <div class="card mt-3">
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">شرکت</dt><dd class="col-sm-9">@Model.Company?.Name</dd>
+                <dt class="col-sm-3">تناوب</dt><dd class="col-sm-9">
+                    @{ var periodText = Model.PeriodType switch {
+                        TaskManagementMvc.Models.InvoiceSchedulePeriodType.Daily => "روزانه",
+                        TaskManagementMvc.Models.InvoiceSchedulePeriodType.Weekly => $"هفتگی - {Model.DayOfWeek}",
+                        TaskManagementMvc.Models.InvoiceSchedulePeriodType.Monthly => $"ماهانه - روز {Model.DayOfMonth}",
+                        _ => string.Empty
+                    }; }
+                    @periodText
+                </dd>
+                <dt class="col-sm-3">ساعت اجرا</dt><dd class="col-sm-9">@Model.HourOfDay:00</dd>
+                <dt class="col-sm-3">گیرندگان</dt><dd class="col-sm-9">@Model.RecipientEmails</dd>
+                <dt class="col-sm-3">فعال</dt><dd class="col-sm-9">@(Model.IsActive?"بله":"خیر")</dd>
+                <dt class="col-sm-3">اجرای بعدی</dt><dd class="col-sm-9">@Model.NextRunAt?.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</dd>
+                <dt class="col-sm-3">آخرین اجرا</dt><dd class="col-sm-9">@Model.LastRunAt?.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</dd>
+                <dt class="col-sm-3">توضیحات</dt><dd class="col-sm-9">@Model.Description</dd>
+            </dl>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">ویرایش</a>
+            <a asp-action="Index" class="btn btn-secondary btn-sm">بازگشت</a>
+            <form asp-action="Trigger" asp-route-id="@Model.Id" method="post" class="d-inline" onsubmit="return confirm('اجرا شود؟');">@Html.AntiForgeryToken()<button class="btn btn-sm btn-outline-secondary">اجرای دستی</button></form>
+        </div>
+    </div>
+
+    <h4 class="mt-4">آخرین اجراها</h4>
+    <table class="table table-striped table-sm">
+        <thead>
+            <tr>
+                <th>شروع</th>
+                <th>پایان</th>
+                <th>تعداد تسک</th>
+                <th>فاکتور</th>
+                <th>وضعیت</th>
+                <th>خطا</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach(var r in Model.RunLogs.OrderByDescending(r=>r.RunStartedAt).Take(50))
+        {
+            <tr class="@(r.IsSuccess?"":"table-danger")">
+                <td>@r.RunStartedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm:ss")</td>
+                <td>@r.RunCompletedAt?.ToLocalTime().ToString("HH:mm:ss")</td>
+                <td>@r.TasksCount</td>
+                <td>@if(r.InvoiceId!=null){<a asp-controller="Invoices" asp-action="Details" asp-route-id="@r.InvoiceId">@r.InvoiceId</a>}</td>
+                <td>@(r.IsSuccess?"موفق":"ناموفق")</td>
+                <td style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="@r.Error">@r.Error</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

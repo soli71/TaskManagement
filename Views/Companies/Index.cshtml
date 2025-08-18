@@ -3,34 +3,29 @@
 <div class="container">
     <h2>شرکت‌ها</h2>
 
-    <p>
-        <a asp-action="Create" class="btn btn-primary">ایجاد شرکت</a>
-    </p>
+    <div class="mb-3">
+        <corp-btn variant="primary" icon="bi-plus" asp-action="Create">ایجاد شرکت</corp-btn>
+    </div>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>نام</th>
-                <th>ایمیل</th>
-                <th>فعال</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
+    <corp-table headers="نام,ایمیل,فعال,اقدامات" striped hover dense>
         @foreach (var item in Model)
         {
             <tr>
                 <td>@item.Name</td>
                 <td>@item.Email</td>
-                <td>@(item.IsActive ? "بله" : "خیر")</td>
                 <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">جزئیات</a>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">ویرایش</a>
+                    @if (item.IsActive)
+                    {<corp-badge variant="success" dense icon="bi-check2">فعال</corp-badge>}
+                    else
+                    {<corp-badge variant="danger" dense icon="bi-x">غیرفعال</corp-badge>}
+                </td>
+                <td class="text-nowrap">
+                    <corp-btn dense size="sm" variant="secondary" icon="bi-eye" asp-action="Details" asp-route-id="@item.Id">جزئیات</corp-btn>
+                    <corp-btn dense size="sm" variant="outline" icon="bi-pencil" asp-action="Edit" asp-route-id="@item.Id">ویرایش</corp-btn>
                 </td>
             </tr>
         }
-        </tbody>
-    </table>
+    </corp-table>
 </div>
 
 

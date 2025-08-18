@@ -1,0 +1,72 @@
+@model TaskManagementMvc.Models.Invoice
+@using System.Linq
+@using TaskManagementMvc.Helpers
+@{
+    Layout = null; // pure HTML fragment for email
+
+    // Helper to format amounts in Tomans (values already stored in Tomans)
+    Func<decimal, string> toman = v => string.Format("{0:N0} تومان", Math.Round(v));
+
+    var total = Model.Lines.Sum(l => l.Amount);
+    var groups = Model.Lines
+        .GroupBy(l => l.TaskItem?.Performer?.FullName ?? l.PerformerName ?? "نامشخص")
+        .Select(g => new {
+            Name = g.Key,
+            Hours = g.Sum(x => x.Hours),
+            Amount = g.Sum(x => x.Amount),
+            Iban = g.Select(x => x.TaskItem?.Performer?.IbanNumber).FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty,
+            Card = g.Select(x => x.TaskItem?.Performer?.CardNumber).FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? string.Empty
+        })
+        .OrderByDescending(g => g.Amount)
+        .ToList();
+}
+<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;font-size:13px;color:#222;line-height:1.6">
+    <h2 style="margin:0 0 10px">فاکتور شماره @Model.InvoiceNumber</h2>
+    <p style="margin:4px 0">تاریخ صدور: @Model.InvoiceDate.ToPersianDate()</p>
+    @if (!string.IsNullOrWhiteSpace(Model.CustomerName))
+    {
+        <p style="margin:4px 0">مشتری: @Model.CustomerName</p>
+    }
+    <p style="margin:8px 0;font-weight:bold">مبلغ کل: @toman(total)</p>
+
+    <h3 style="margin:18px 0 6px;font-size:15px">جمع مبالغ به تفکیک افراد</h3>
+    <table dir="rtl" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:Tahoma,Arial,sans-serif;font-size:12px;width:100%;margin-top:4px">
+        <thead>
+            <tr style="background:#f2f2f2;text-align:center">
+                <th style="border:1px solid #ccc">نام فرد</th>
+                @* <th style="border:1px solid #ccc">ساعات</th> *@
+                <th style="border:1px solid #ccc">مبلغ (تومان)</th>
+                <th style="border:1px solid #ccc">شبا</th>
+                <th style="border:1px solid #ccc">کارت</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var g in groups)
+        {
+            <tr style="text-align:center">
+                <td style="border:1px solid #ccc">@g.Name</td>
+                @* <td style="border:1px solid #ccc">@g.Hours.ToString("0.##")</td> *@
+                <td style="border:1px solid #ccc">@toman(g.Amount)</td>
+                <td style="border:1px solid #ccc">IR @g.Iban</td>
+                <td style="border:1px solid #ccc">@g.Card</td>
+            </tr>
+        }
+            <tr style="font-weight:bold;background:#fafafa;text-align:center">
+                <td style="border:1px solid #ccc">جمع کل</td>
+                @* <td style="border:1px solid #ccc">@groups.Sum(x => x.Hours).ToString("0.##")</td> *@
+                <td style="border:1px solid #ccc">@toman(groups.Sum(x => x.Amount))</td>
+                <td style="border:1px solid #ccc"></td>
+                <td style="border:1px solid #ccc"></td>
+            </tr>
+        </tbody>
+    </table>
+
+  @*   <h3 style="margin:20px 0 6px;font-size:15px">جزئیات تسک‌ها</h3>
+    <ul style="padding:0 18px 0 0;margin:6px 0">
+        @foreach (var l in Model.Lines)
+        {
+            <li style="margin:3px 0">@l.Title : @l.Hours ساعت × @toman(l.HourlyRate) = <strong>@toman(l.Amount)</strong></li>
+        }
+    </ul> *@
+    <p style="margin-top:25px">با تشکر</p>
+</div>

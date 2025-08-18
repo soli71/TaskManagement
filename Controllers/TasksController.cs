@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagementMvc.Data;
 using TaskManagementMvc.Models;
 using TaskManagementMvc.Models.ViewModels;
+using TaskManagementMvc.Services;
 using TaskStatus = TaskManagementMvc.Models.TaskStatus;
 
 namespace TaskManagementMvc.Controllers
@@ -15,11 +16,16 @@ namespace TaskManagementMvc.Controllers
     {
         private readonly TaskManagementContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IScalableNotificationService _notificationService;
 
-        public TasksController(TaskManagementContext context, UserManager<ApplicationUser> userManager)
+        public TasksController(
+            TaskManagementContext context,
+            UserManager<ApplicationUser> userManager,
+            IScalableNotificationService notificationService)
         {
             _context = context;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
         // GET: Tasks
@@ -29,7 +35,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> tasksQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 tasksQuery = _context.Tasks
@@ -39,20 +45,25 @@ namespace TaskManagementMvc.Controllers
                     .ThenInclude(p => p.Company)
                     .Include(t => t.CreatedBy);
             }
-            else if (user?.CompanyId != null)
+            else if (user != null)
             {
-                // Company users can only see their company's tasks
+                // Non-admin users can only see tasks from projects they have explicit access to (within their company)
+                var accessibleProjectIds = await _context.ProjectAccess
+                    .Where(pa => pa.UserId == user.Id && pa.IsActive)
+                    .Select(pa => pa.ProjectId)
+                    .ToListAsync();
+
                 tasksQuery = _context.Tasks
                     .Include(t => t.Performer)
                     .ThenInclude(p => p.Grade)
                     .Include(t => t.Project)
                     .ThenInclude(p => p.Company)
                     .Include(t => t.CreatedBy)
-                    .Where(t => t.Project.CompanyId == user.CompanyId);
+                    .Where(t => t.ProjectId != null && accessibleProjectIds.Contains(t.ProjectId.Value));
             }
             else
             {
-                // Users without company can't see any tasks
+                // Users without valid user info can't see any tasks
                 tasksQuery = _context.Tasks.Where(t => false);
             }
 
@@ -71,7 +82,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> tasksQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all archived tasks
                 tasksQuery = _context.Tasks
@@ -81,20 +92,25 @@ namespace TaskManagementMvc.Controllers
                     .ThenInclude(p => p.Company)
                     .Include(t => t.CreatedBy);
             }
-            else if (user?.CompanyId != null)
+            else if (user != null)
             {
-                // Company users can only see their company's archived tasks
+                // Non-admin users can only see archived tasks from projects they have explicit access to (within their company)
+                var accessibleProjectIds = await _context.ProjectAccess
+                    .Where(pa => pa.UserId == user.Id && pa.IsActive)
+                    .Select(pa => pa.ProjectId)
+                    .ToListAsync();
+
                 tasksQuery = _context.Tasks
                     .Include(t => t.Performer)
                     .ThenInclude(p => p.Grade)
                     .Include(t => t.Project)
                     .ThenInclude(p => p.Company)
                     .Include(t => t.CreatedBy)
-                    .Where(t => t.Project.CompanyId == user.CompanyId);
+                    .Where(t => t.ProjectId != null && accessibleProjectIds.Contains(t.ProjectId.Value));
             }
             else
             {
-                // Users without company can't see any tasks
+                // Users without valid user info can't see any tasks
                 tasksQuery = _context.Tasks.Where(t => false);
             }
 
@@ -116,143 +132,335 @@ namespace TaskManagementMvc.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            IQueryable<TaskItem> taskQuery;
-
-            if (User.IsInRole("Admin"))
-            {
-                // Admin can see all tasks
-                taskQuery = _context.Tasks
-                    .Include(t => t.Performer)
-                    .ThenInclude(p => p.Grade)
-                    .Include(t => t.Project)
-                    .ThenInclude(p => p.Company)
-                    .Include(t => t.CreatedBy)
-                    .Include(t => t.UpdatedBy)
-                    .Include(t => t.Attachments)
-                    .Include(t => t.HistoryEntries)
-                    .ThenInclude(h => h.ChangedBy);
-            }
-            else if (user?.CompanyId != null)
-            {
-                // Company users can only see their company's tasks
-                taskQuery = _context.Tasks
-                    .Include(t => t.Performer)
-                    .ThenInclude(p => p.Grade)
-                    .Include(t => t.Project)
-                    .ThenInclude(p => p.Company)
-                    .Include(t => t.CreatedBy)
-                    .Include(t => t.UpdatedBy)
-                    .Include(t => t.Attachments)
-                    .Include(t => t.HistoryEntries)
-                    .ThenInclude(h => h.ChangedBy)
-                    .Where(t => t.Project.CompanyId == user.CompanyId);
-            }
-            else
-            {
-                // Users without company can't see any tasks
-                taskQuery = _context.Tasks.Where(t => false);
-            }
-
-            var task = await taskQuery.FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.Tasks
+                .Include(t => t.Performer)
+                .ThenInclude(p => p.Grade)
+                .Include(t => t.Project)
+                .ThenInclude(p => p.Company)
+                .Include(t => t.CreatedBy)
+                .Include(t => t.UpdatedBy)
+                .Include(t => t.Attachments)
+                .Include(t => t.HistoryEntries)
+                .ThenInclude(h => h.ChangedBy)
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)
             {
                 return NotFound();
             }
 
+            // Check if user has access to this task's project
+            if (task.Project != null && !await HasProjectAccess(user, task.Project))
+            {
+                return Forbid();
+            }
+
             return View(task);
         }
 
         // GET: Tasks/Create
-        [Authorize(Policy = "Tasks.Create")]
-        public async Task<IActionResult> Create()
+        [Authorize(Policy = Permissions.CreateTasks)]
+        public async Task<IActionResult> Create(int? projectId)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user?.CompanyId == null && !User.IsInRole("Admin"))
+            if (user?.CompanyId == null && !User.IsInRole(Roles.SystemAdmin))
             {
-                return Forbid("شما باید به یک شرکت تخصیص داده شده باشید.");
+                await this.NotifyAuthErrorAsync("شما باید به یک شرکت تخصیص داده شده باشید.");
+                return BadRequest();
+            }
+
+            // Check if user has access to the specified project
+            if (projectId != null && !await HasProjectAccessById(user, projectId))
+            {
+                await this.NotifyPermissionErrorAsync("شما به این پروژه دسترسی ندارید.");
+                return BadRequest();
             }
 
             var vm = new TaskFormViewModel
             {
                 Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList(),
-                Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList()
+                Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList(),
+                Companies = (await GetCompaniesForUser()).Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList(),
+                ProjectId = projectId,
+                CompanyId = User.IsInRole(Roles.SystemAdmin) ? null : user.CompanyId
             };
+
+            // Check if this is an AJAX request
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_CreateTaskModal", vm);
+            }
+
             return View(vm);
         }
 
         // POST: Tasks/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Policy = "Tasks.Create")]
-        public async Task<IActionResult> Create(TaskFormViewModel vm)
+        [Authorize(Policy = Permissions.CreateTasks)]
+        public async Task<IActionResult> Create(TaskFormViewModel vm, IFormFileCollection files, string? initialComment)
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user?.CompanyId == null && !User.IsInRole("Admin"))
+            try
             {
-                return Forbid("شما باید به یک شرکت تخصیص داده شده باشید.");
-            }
-
-            if (ModelState.IsValid)
-            {
-                var task = new TaskItem
+                var user = await _userManager.GetUserAsync(User);
+                if (user?.CompanyId == null && !User.IsInRole(Roles.SystemAdmin))
                 {
-                    Title = vm.Title,
-                    Description = vm.Description,
-                    Status = vm.Status,
-                    Priority = vm.Priority,
-                    Hours = vm.Hours,
-                    OriginalEstimateHours = vm.OriginalEstimateHours,
-                    StartAt = vm.StartAt,
-                    EndAt = vm.EndAt,
-                    PerformerId = vm.PerformerId,
-                    ProjectId = vm.ProjectId
-                };
-
-                // If user is not admin, ensure the project belongs to user's company
-                if (!User.IsInRole("Admin") && task.ProjectId.HasValue)
-                {
-                    var project = await _context.Projects.FindAsync(task.ProjectId.Value);
-                    if (project?.CompanyId != user.CompanyId)
-                    {
-                        ModelState.AddModelError("ProjectId", "شما فقط می‌توانید تسک‌هایی در پروژه‌های شرکت خود ایجاد کنید.");
-                        vm.Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
-                        vm.Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
-                        return View(vm);
-                    }
+                    await this.NotifyAuthErrorAsync("شما باید به یک شرکت تخصیص داده شده باشید.");
+                    return BadRequest();
                 }
 
-                task.CreatedAt = DateTime.Now;
-                task.CreatedById = user.Id;
-                task.IsArchived = false;
-
-                _context.Add(task);
-                await _context.SaveChangesAsync();
-
-                // Log the creation
-                var history = new TaskHistory
+                if (ModelState.IsValid)
                 {
-                    TaskId = task.Id,
-                    Field = "Created",
-                    OldValue = "",
-                    NewValue = "Task created",
-                    ChangedAt = DateTime.Now,
-                    ChangedById = user.Id
-                };
-                _context.TaskHistories.Add(history);
-                await _context.SaveChangesAsync();
+                    // Check if user has access to the specified project
+                    if (vm.ProjectId != null && !await HasProjectAccessById(user, vm.ProjectId))
+                    {
+                        await this.NotifyPermissionErrorAsync("شما به این پروژه دسترسی ندارید.");
+                        ModelState.AddModelError("ProjectId", "شما به این پروژه دسترسی ندارید.");
+                        vm.Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
+                        vm.Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
+                        vm.Companies = (await GetCompaniesForUser()).Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
+                        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        {
+                            Response.StatusCode = 400;
+                            return PartialView("_CreateTaskModal", vm);
+                        }
+                        return View(vm);
+                    }
 
-                TempData["SuccessMessage"] = "تسک با موفقیت ایجاد شد.";
-                return RedirectToAction(nameof(Index));
+                    var task = new TaskItem
+                    {
+                        Title = vm.Title,
+                        Description = vm.Description,
+                        Status = vm.Status,
+                        Priority = vm.Priority,
+                        Hours = vm.Hours,
+                        OriginalEstimateHours = vm.OriginalEstimateHours,
+                        StartAt = vm.StartAt,
+                        EndAt = vm.EndAt,
+                        PerformerId = vm.PerformerId,
+                        ProjectId = vm.ProjectId
+                    };
+
+                    // Set company ID based on user role
+                    if (User.IsInRole(Roles.SystemAdmin))
+                    {
+                        // Admin can choose company
+                        if (vm.CompanyId.HasValue)
+                        {
+                            // Validate that the company exists
+                            var company = await _context.Companies.FindAsync(vm.CompanyId.Value);
+                            if (company == null)
+                            {
+                                await this.NotifyValidationErrorAsync("شرکت انتخاب شده یافت نشد.");
+                                ModelState.AddModelError("CompanyId", "شرکت انتخاب شده یافت نشد.");
+                                vm.Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
+                                vm.Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
+                                vm.Companies = (await GetCompaniesForUser()).Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
+                                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                                {
+                                    Response.StatusCode = 400;
+                                    return PartialView("_CreateTaskModal", vm);
+                                }
+                                return View(vm);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Non-admin users use their assigned company
+                        vm.CompanyId = user.CompanyId;
+                    }
+
+                    // If user is not admin, ensure the project belongs to user's company
+                    if (!User.IsInRole(Roles.SystemAdmin) && task.ProjectId.HasValue)
+                    {
+                        var project = await _context.Projects.FindAsync(task.ProjectId.Value);
+                        if (project?.CompanyId != user.CompanyId)
+                        {
+                            await this.NotifyPermissionErrorAsync("شما فقط می‌توانید تسک‌هایی در پروژه‌های شرکت خود ایجاد کنید.");
+                            ModelState.AddModelError("ProjectId", "شما فقط می‌توانید تسک‌هایی در پروژه‌های شرکت خود ایجاد کنید.");
+                            vm.Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
+                            vm.Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
+                            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                            {
+                                Response.StatusCode = 400;
+                                return PartialView("_CreateTaskModal", vm);
+                            }
+                            return View(vm);
+                        }
+                    }
+
+                    task.CreatedAt = DateTime.Now;
+                    task.CreatedById = user.Id;
+                    task.IsArchived = false;
+
+                    _context.Add(task);
+                    await _context.SaveChangesAsync();
+
+                    // Log the creation
+                    var history = new TaskHistory
+                    {
+                        TaskId = task.Id,
+                        Field = "Created",
+                        OldValue = "",
+                        NewValue = "Task created",
+                        ChangedAt = DateTime.Now,
+                        ChangedById = user.Id
+                    };
+                    _context.TaskHistories.Add(history);
+
+                    // Add initial comment if provided
+                    if (!string.IsNullOrWhiteSpace(initialComment))
+                    {
+                        var commentHistory = new TaskHistory
+                        {
+                            TaskId = task.Id,
+                            Field = "Comment",
+                            OldValue = "",
+                            NewValue = initialComment,
+                            ChangedAt = DateTime.Now,
+                            ChangedById = user.Id
+                        };
+                        _context.TaskHistories.Add(commentHistory);
+                    }
+
+                    // Process uploaded files
+                    if (files != null && files.Count > 0)
+                    {
+                        foreach (var file in files)
+                        {
+                            if (file.Length > 0)
+                            {
+                                // Generate unique filename
+                                var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                                var filePath = Path.Combine("wwwroot", "uploads", "attachments", fileName);
+
+                                // Ensure directory exists
+                                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+
+                                // Save file
+                                using (var stream = new FileStream(filePath, FileMode.Create))
+                                {
+                                    await file.CopyToAsync(stream);
+                                }
+
+                                // Create attachment record
+                                var attachment = new TaskAttachment
+                                {
+                                    TaskId = task.Id,
+                                    FileName = file.FileName,
+                                    FilePath = fileName,
+                                    ContentType = file.ContentType,
+                                    FileSize = file.Length,
+                                    UploadedAt = DateTime.Now,
+                                    UploadedById = user.Id
+                                };
+
+                                _context.TaskAttachments.Add(attachment);
+                            }
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    // Send notifications
+                    try
+                    {
+                        // Notify task creator
+                        // Corrected parameter order: (controller, NotificationType, title, message)
+                        await ScalableNotificationExtensions.NotifyCurrentUserAsync(this, NotificationType.Success, "تسک جدید ایجاد شد", $"تسک '{task.Title}' با موفقیت ایجاد شد.");
+
+                        // Notify performer if different from creator
+                        if (task.PerformerId.HasValue && task.PerformerId != user.Id)
+                        {
+                            await ScalableNotificationExtensions.NotifyUserAsync(
+                                this,
+                                task.PerformerId.ToString(),
+                                "تسک جدید تخصیص یافت",
+                                $"تسک '{task.Title}' به شما تخصیص داده شد.",
+                                NotificationType.Info,
+                                Url.Action("Details", "Tasks", new { id = task.Id }),
+                                "مشاهده تسک"
+                            );
+                        }
+
+                        // Notify project managers if exists
+                        if (task.ProjectId.HasValue)
+                        {
+                            var project = await _context.Projects
+                                .Include(p => p.ProjectAccess)
+                                .ThenInclude(pa => pa.User)
+                                .FirstOrDefaultAsync(p => p.Id == task.ProjectId);
+
+                            if (project != null)
+                            {
+                                // Get users with Manager role who have access to this project
+                                var projectUsers = project.ProjectAccess
+                                    .Where(pa => pa.IsActive)
+                                    .Select(pa => pa.User)
+                                    .ToList();
+
+                                var managerIds = new List<string>();
+                                foreach (var projectUser in projectUsers)
+                                {
+                                    var userRoles = await _userManager.GetRolesAsync(projectUser);
+                                    if (userRoles.Contains("Manager"))
+                                    {
+                                        managerIds.Add(projectUser.Id.ToString());
+                                    }
+                                }
+
+                                if (managerIds.Any())
+                                {
+                                    // Notify project managers
+                                    await ScalableNotificationExtensions.NotifyUsersAsync(
+                                        this,
+                                        managerIds,
+                                        "تسک جدید در پروژه",
+                                        $"تسک جدید '{task.Title}' در پروژه '{project.Name}' ایجاد شد.",
+                                        NotificationType.Info,
+                                        Url.Action("Details", "Tasks", new { id = task.Id }),
+                                        "مشاهده تسک"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception notificationEx)
+                    {
+                        // Log notification error but don't fail the main operation
+                        // _logger.LogError(notificationEx, "Failed to send task creation notifications");
+                    }
+
+                    // AJAX success response
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = true });
+                    }
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (Exception ex)
+            {
+                await this.NotifyServerErrorAsync($"خطا در ایجاد تسک: {ex.Message}");
+                // Log the exception here if you have a logging system
             }
 
             vm.Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
             vm.Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString())).ToList();
+            vm.Companies = (await GetCompaniesForUser()).Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
+
+            // Check if this is an AJAX request
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                Response.StatusCode = 400; // Bad Request for validation errors
+                return PartialView("_CreateTaskModal", vm);
+            }
+
             return View(vm);
         }
 
         // GET: Tasks/Edit/5
-        [Authorize(Policy = "Tasks.Edit")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -261,44 +469,25 @@ namespace TaskManagementMvc.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            IQueryable<TaskItem> taskQuery;
-
-            if (User.IsInRole("Admin"))
-            {
-                // Admin can see all tasks
-                taskQuery = _context.Tasks
-                    .Include(t => t.Performer)
-                    .ThenInclude(p => p.Grade)
-                    .Include(t => t.Project)
-                    .ThenInclude(p => p.Company)
-                    .Include(t => t.Attachments)
-                    .Include(t => t.HistoryEntries)
-                    .ThenInclude(h => h.ChangedBy);
-            }
-            else if (user?.CompanyId != null)
-            {
-                // Company users can only see their company's tasks
-                taskQuery = _context.Tasks
-                    .Include(t => t.Performer)
-                    .ThenInclude(p => p.Grade)
-                    .Include(t => t.Project)
-                    .ThenInclude(p => p.Company)
-                    .Include(t => t.Attachments)
-                    .Include(t => t.HistoryEntries)
-                    .ThenInclude(h => h.ChangedBy)
-                    .Where(t => t.Project.CompanyId == user.CompanyId);
-            }
-            else
-            {
-                // Users without company can't see any tasks
-                taskQuery = _context.Tasks.Where(t => false);
-            }
-
-            var task = await taskQuery.FirstOrDefaultAsync(t => t.Id == id);
+            var task = await _context.Tasks
+                .Include(t => t.Performer)
+                .ThenInclude(p => p.Grade)
+                .Include(t => t.Project)
+                .ThenInclude(p => p.Company)
+                .Include(t => t.Attachments)
+                .Include(t => t.HistoryEntries)
+                .ThenInclude(h => h.ChangedBy)
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null)
             {
                 return NotFound();
+            }
+
+            // Check if user has access to this task's project
+            if (task.Project != null && !await HasProjectAccess(user, task.Project))
+            {
+                return Forbid();
             }
 
             var vm = new TaskFormViewModel
@@ -314,9 +503,19 @@ namespace TaskManagementMvc.Controllers
                 EndAt = task.EndAt,
                 PerformerId = task.PerformerId,
                 ProjectId = task.ProjectId,
+                CompanyId = task.Project?.CompanyId,
                 Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString(), p.Id == task.PerformerId)).ToList(),
-                Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString(), p.Id == task.ProjectId)).ToList()
+                Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString(), p.Id == task.ProjectId)).ToList(),
+                Companies = (await GetCompaniesForUser()).Select(c => new SelectListItem(c.Name, c.Id.ToString(), c.Id == task.Project?.CompanyId)).ToList(),
+                Attachments = task.Attachments?.ToList() ?? new List<TaskAttachment>(),
+                HistoryEntries = task.HistoryEntries?.ToList() ?? new List<TaskHistory>()
             };
+
+            // Check if this is an AJAX request
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView(vm);
+            }
 
             return View(vm);
         }
@@ -324,8 +523,7 @@ namespace TaskManagementMvc.Controllers
         // POST: Tasks/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Policy = "Tasks.Edit")]
-        public async Task<IActionResult> Edit(int id, TaskFormViewModel vm)
+        public async Task<IActionResult> Edit(int id, TaskFormViewModel vm, string? comment)
         {
             if (id != vm.Id)
             {
@@ -333,9 +531,10 @@ namespace TaskManagementMvc.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (user?.CompanyId == null && !User.IsInRole("Admin"))
+            if (user?.CompanyId == null && !User.IsInRole(Roles.SystemAdmin))
             {
-                return Forbid("شما باید به یک شرکت تخصیص داده شده باشید.");
+                await this.NotifyAuthErrorAsync("شما باید به یک شرکت تخصیص داده شده باشید.");
+                return BadRequest();
             }
 
             if (ModelState.IsValid)
@@ -349,7 +548,7 @@ namespace TaskManagementMvc.Controllers
                     }
 
                     // If user is not admin, ensure the project belongs to user's company
-                    if (!User.IsInRole("Admin") && vm.ProjectId.HasValue)
+                    if (!User.IsInRole(Roles.SystemAdmin) && vm.ProjectId.HasValue)
                     {
                         var project = await _context.Projects.FindAsync(vm.ProjectId.Value);
                         if (project?.CompanyId != user.CompanyId)
@@ -418,9 +617,118 @@ namespace TaskManagementMvc.Controllers
                     existingTask.UpdatedById = user.Id;
 
                     _context.Update(existingTask);
+
+                    // Add new comment if provided
+                    if (!string.IsNullOrWhiteSpace(comment))
+                    {
+                        var commentHistory = new TaskHistory
+                        {
+                            TaskId = existingTask.Id,
+                            Field = "Comment",
+                            OldValue = "",
+                            NewValue = comment,
+                            ChangedAt = DateTime.Now,
+                            ChangedById = user.Id
+                        };
+                        _context.TaskHistories.Add(commentHistory);
+                    }
+
                     await _context.SaveChangesAsync();
 
-                    TempData["SuccessMessage"] = "تسک با موفقیت به‌روزرسانی شد.";
+                    // Send notifications
+                    try
+                    {
+                        // Track important changes for notifications
+                        bool performerChanged = existingTask.PerformerId != vm.PerformerId;
+                        bool statusChanged = existingTask.Status != vm.Status;
+
+                        // Notify task editor
+                        await ScalableNotificationExtensions.NotifyCurrentUserAsync(
+                            this,
+                            "تسک به‌روزرسانی شد",
+                            $"تسک '{existingTask.Title}' با موفقیت به‌روزرسانی شد.",
+                            NotificationType.Success,
+                            Url.Action("Details", "Tasks", new { id = existingTask.Id }),
+                            "مشاهده تسک"
+                        );
+
+                        // Notify performer about changes
+                        if (existingTask.PerformerId.HasValue && existingTask.PerformerId != user.Id)
+                        {
+                            string message = $"تسک '{existingTask.Title}' به‌روزرسانی شد.";
+                            if (performerChanged)
+                            {
+                                message = $"تسک '{existingTask.Title}' به شما تخصیص داده شد.";
+                            }
+                            else if (statusChanged)
+                            {
+                                message = $"وضعیت تسک '{existingTask.Title}' تغییر کرد.";
+                            }
+
+                            await ScalableNotificationExtensions.NotifyUserAsync(
+                                this,
+                                existingTask.PerformerId.ToString(),
+                                performerChanged ? "تسک جدید تخصیص یافت" : "تسک به‌روزرسانی شد",
+                                message,
+                                performerChanged ? NotificationType.Info : NotificationType.Warning,
+                                Url.Action("Details", "Tasks", new { id = existingTask.Id }),
+                                "مشاهده تسک"
+                            );
+                        }
+
+                        // Notify project managers
+                        if (existingTask.ProjectId.HasValue)
+                        {
+                            var project = await _context.Projects
+                                .Include(p => p.ProjectAccess)
+                                .ThenInclude(pa => pa.User)
+                                .FirstOrDefaultAsync(p => p.Id == existingTask.ProjectId);
+
+                            if (project != null)
+                            {
+                                // Get users with Manager role who have access to this project (excluding current user)
+                                var projectUsers = project.ProjectAccess
+                                    .Where(pa => pa.IsActive && pa.UserId != user.Id)
+                                    .Select(pa => pa.User)
+                                    .ToList();
+
+                                var managerIds = new List<string>();
+                                foreach (var projectUser in projectUsers)
+                                {
+                                    var userRoles = await _userManager.GetRolesAsync(projectUser);
+                                    if (userRoles.Contains("Manager"))
+                                    {
+                                        managerIds.Add(projectUser.Id.ToString());
+                                    }
+                                }
+
+                                if (managerIds.Any())
+                                {
+                                    await ScalableNotificationExtensions.NotifyUsersAsync(
+                                        this,
+                                        managerIds,
+                                        "تسک در پروژه به‌روزرسانی شد",
+                                        $"تسک '{existingTask.Title}' در پروژه '{project.Name}' به‌روزرسانی شد.",
+                                        NotificationType.Info,
+                                        Url.Action("Details", "Tasks", new { id = existingTask.Id }),
+                                        "مشاهده تسک"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception notificationEx)
+                    {
+                        // Log notification error but don't fail the main operation
+                        // _logger.LogError(notificationEx, "Failed to send task update notifications");
+                    }
+
+                    // Handle AJAX request
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = true });
+                    }
+
                     return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
@@ -438,11 +746,20 @@ namespace TaskManagementMvc.Controllers
 
             vm.Performers = (await GetPerformersForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString(), p.Id == vm.PerformerId)).ToList();
             vm.Projects = (await GetProjectsForUser()).Select(p => new SelectListItem(p.Name, p.Id.ToString(), p.Id == vm.ProjectId)).ToList();
+            vm.Companies = (await GetCompaniesForUser()).Select(c => new SelectListItem(c.Name, c.Id.ToString(), c.Id == vm.CompanyId)).ToList();
+
+            // Handle AJAX request for validation errors
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                Response.StatusCode = 400; // Bad Request
+                return PartialView("_EditTaskModal", vm);
+            }
+
             return View(vm);
         }
 
         // GET: Tasks/Delete/5
-        [Authorize(Policy = "Tasks.Delete")]
+        [Authorize(Policy = Permissions.DeleteTasks)]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -453,7 +770,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -497,7 +814,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -535,7 +852,71 @@ namespace TaskManagementMvc.Controllers
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "تسک با موفقیت حذف شد.";
+            // Send notification about successful deletion
+            try
+            {
+                await this.NotifyCurrentUserAsync(
+
+                    "تسک حذف شد",
+                    $"تسک '{task.Title}' با موفقیت حذف شد.",
+                    NotificationType.Success
+                );
+
+                // Notify performer if different from current user
+                if (task.PerformerId.HasValue && task.PerformerId != user.Id)
+                {
+                    await this.NotifyUserAsync(
+
+                        task.PerformerId.ToString(),
+                        "تسک حذف شد",
+                        $"تسک '{task.Title}' که به شما تخصیص داده شده بود حذف شد.",
+                        NotificationType.Warning
+                    );
+                }
+
+                // Notify project managers if exists
+                if (task.ProjectId.HasValue)
+                {
+                    var project = await _context.Projects
+                        .Include(p => p.ProjectAccess)
+                        .ThenInclude(pa => pa.User)
+                        .FirstOrDefaultAsync(p => p.Id == task.ProjectId);
+
+                    if (project != null)
+                    {
+                        var projectUsers = project.ProjectAccess
+                            .Where(pa => pa.IsActive && pa.UserId != user.Id)
+                            .Select(pa => pa.User)
+                            .ToList();
+
+                        var managerIds = new List<string>();
+                        foreach (var projectUser in projectUsers)
+                        {
+                            var userRoles = await _userManager.GetRolesAsync(projectUser);
+                            if (userRoles.Contains("Manager"))
+                            {
+                                managerIds.Add(projectUser.Id.ToString());
+                            }
+                        }
+
+                        if (managerIds.Any())
+                        {
+                            await this.NotifyUsersAsync(
+                                managerIds,
+                                "تسک در پروژه حذف شد",
+                                $"تسک '{task.Title}' در پروژه '{project.Name}' حذف شد.",
+                                NotificationType.Warning
+                            );
+                        }
+                    }
+                }
+            }
+            catch (Exception notificationEx)
+            {
+                // Log notification error but don't fail the main operation
+                // _logger.LogError(notificationEx, "Failed to send task deletion notifications");
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -548,7 +929,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -599,7 +980,34 @@ namespace TaskManagementMvc.Controllers
             _context.Update(task);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "تسک با موفقیت آرشیو شد.";
+            // Send notification about successful archiving
+            try
+            {
+                await this.NotifyCurrentUserAsync(
+
+                    "تسک آرشیو شد",
+                    $"تسک '{task.Title}' با موفقیت آرشیو شد.",
+                    NotificationType.Info
+                );
+
+                // Notify performer if different from current user
+                if (task.PerformerId.HasValue && task.PerformerId != user.Id)
+                {
+                    await this.NotifyUserAsync(
+
+                        task.PerformerId.ToString(),
+                        "تسک آرشیو شد",
+                        $"تسک '{task.Title}' که به شما تخصیص داده شده بود آرشیو شد.",
+                        NotificationType.Info
+                    );
+                }
+            }
+            catch (Exception notificationEx)
+            {
+                // Log notification error but don't fail the main operation
+                // _logger.LogError(notificationEx, "Failed to send task archive notifications");
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
@@ -612,7 +1020,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -663,7 +1071,32 @@ namespace TaskManagementMvc.Controllers
             _context.Update(task);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "تسک با موفقیت از آرشیو خارج شد.";
+            // Send notification about successful unarchiving
+            try
+            {
+                await this.NotifyCurrentUserAsync(
+                    "تسک از آرشیو خارج شد",
+                    $"تسک '{task.Title}' با موفقیت از آرشیو خارج شد.",
+                    NotificationType.Success
+                );
+
+                // Notify performer if different from current user
+                if (task.PerformerId.HasValue && task.PerformerId != user.Id)
+                {
+                    await this.NotifyUserAsync(
+                        task.PerformerId.ToString(),
+                        "تسک از آرشیو خارج شد",
+                        $"تسک '{task.Title}' که به شما تخصیص داده شده بود از آرشیو خارج شد.",
+                        NotificationType.Info
+                    );
+                }
+            }
+            catch (Exception notificationEx)
+            {
+                // Log notification error but don't fail the main operation
+                // _logger.LogError(notificationEx, "Failed to send task unarchive notifications");
+            }
+
             return RedirectToAction(nameof(Archived));
         }
 
@@ -674,7 +1107,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -719,7 +1152,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -774,74 +1207,36 @@ namespace TaskManagementMvc.Controllers
             _context.Update(task);
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, message = "تسک با موفقیت به‌روزرسانی شد." });
-        }
-
-        // POST: Tasks/UpdateStatus/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Policy = "Tasks.Edit")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusRequest request)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            IQueryable<TaskItem> taskQuery;
-
-            if (User.IsInRole("Admin"))
+            // Send notification about quick save
+            try
             {
-                // Admin can see all tasks
-                taskQuery = _context.Tasks
-                    .Include(t => t.Performer)
-                    .ThenInclude(p => p.Grade)
-                    .Include(t => t.Project)
-                    .ThenInclude(p => p.Company);
+                await ScalableNotificationExtensions.NotifyCurrentUserAsync(
+                    this,
+                    "تسک به‌روزرسانی شد",
+                    $"تسک '{task.Title}' با موفقیت به‌روزرسانی شد.",
+                    NotificationType.Success,
+                    Url.Action("Details", "Tasks", new { id = task.Id }),
+                    "مشاهده تسک"
+                );
             }
-            else if (user?.CompanyId != null)
+            catch (Exception notificationEx)
             {
-                // Company users can only see their company's tasks
-                taskQuery = _context.Tasks
-                    .Include(t => t.Performer)
-                    .ThenInclude(p => p.Grade)
-                    .Include(t => t.Project)
-                    .ThenInclude(p => p.Company)
-                    .Where(t => t.Project.CompanyId == user.CompanyId);
-            }
-            else
-            {
-                // Users without company can't see any tasks
-                taskQuery = _context.Tasks.Where(t => false);
+                // Log notification error but don't fail the main operation
+                // _logger.LogError(notificationEx, "Failed to send quick save notifications");
             }
 
-            var task = await taskQuery.FirstOrDefaultAsync(t => t.Id == id);
-
-            if (task == null)
-            {
-                return NotFound();
-            }
-
-            var oldStatus = task.Status;
-            task.Status = request.Status;
-            task.UpdatedAt = DateTime.Now;
-            task.UpdatedById = user.Id;
-
-            // Log the status change
-            await LogTaskChange(id, "Status", oldStatus.ToString(), request.Status.ToString(), user.Id);
-
-            _context.Update(task);
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "وضعیت تسک با موفقیت به‌روزرسانی شد." });
+            return Json(new { success = true });
         }
 
         // POST: Tasks/ChangeStatus/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Policy = "Tasks.Edit")]
         public async Task<IActionResult> ChangeStatus(int id, TaskStatus newStatus)
         {
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -874,6 +1269,15 @@ namespace TaskManagementMvc.Controllers
             }
 
             var oldStatus = task.Status;
+
+            // Check if status is actually changing
+            if (oldStatus == newStatus)
+            {
+                // No change needed, return success
+                await this.NotifyValidationErrorAsync("وضعیت تسک تغییری نکرده است.");
+                return Json(new { success = true });
+            }
+
             task.Status = newStatus;
             task.UpdatedAt = DateTime.Now;
             task.UpdatedById = user.Id;
@@ -883,8 +1287,44 @@ namespace TaskManagementMvc.Controllers
 
             _context.Update(task);
             await _context.SaveChangesAsync();
+            // send notify for user
 
-            return Json(new { success = true, message = "وضعیت تسک با موفقیت تغییر کرد." });
+            return Json(new { success = true });
+        }
+
+        // POST: Tasks/QuickCreate  (inline board add)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Policy = "Tasks.Create")]
+        public async Task<IActionResult> QuickCreate(string title, TaskStatus status, int? projectId)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                await this.NotifyValidationErrorAsync("عنوان الزامی است");
+                return BadRequest();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+
+            var task = new TaskItem
+            {
+                Title = title.Trim(),
+                Status = status,
+                ProjectId = projectId,
+                CreatedAt = DateTime.Now,
+                CreatedById = user?.Id,
+                Priority = TaskPriority.Medium,
+                Hours = 0
+            };
+
+            _context.Tasks.Add(task);
+            await _context.SaveChangesAsync();
+
+            // Load navigation props used in card
+            await _context.Entry(task).Reference(t => t.Project).LoadAsync();
+            await _context.Entry(task).Reference(t => t.Performer).LoadAsync();
+
+            return PartialView("_TaskCard", task);
         }
 
         // GET: Tasks/CompletedUninvoiced
@@ -894,7 +1334,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> tasksQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all completed uninvoiced tasks
                 tasksQuery = _context.Tasks
@@ -936,7 +1376,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all tasks
                 taskQuery = _context.Tasks
@@ -970,7 +1410,8 @@ namespace TaskManagementMvc.Controllers
 
             if (file == null || file.Length == 0)
             {
-                return BadRequest("فایل انتخاب نشده است.");
+                await this.NotifyValidationErrorAsync("فایل انتخاب نشده است.");
+                return BadRequest();
             }
 
             // Generate unique filename
@@ -1005,7 +1446,40 @@ namespace TaskManagementMvc.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, message = "فایل با موفقیت آپلود شد." });
+            // Send notification about file upload
+            try
+            {
+                await ScalableNotificationExtensions.NotifyCurrentUserAsync(
+                    this,
+                    "فایل آپلود شد",
+                    $"فایل '{file.FileName}' با موفقیت به تسک '{task.Title}' اضافه شد.",
+                    NotificationType.Success,
+                    Url.Action("Details", "Tasks", new { id = task.Id }),
+                    "مشاهده تسک"
+                );
+
+                // Notify performer if different from current user
+                if (task.PerformerId.HasValue && task.PerformerId != user.Id)
+                {
+                    await ScalableNotificationExtensions.NotifyUserAsync(
+                        this,
+                        task.PerformerId.ToString(),
+                        "فایل جدید اضافه شد",
+                        $"فایل '{file.FileName}' به تسک '{task.Title}' اضافه شد.",
+                        NotificationType.Info,
+                        Url.Action("Details", "Tasks", new { id = task.Id }),
+                        "مشاهده تسک"
+                    );
+                }
+            }
+            catch (Exception notificationEx)
+            {
+                // Log notification error but don't fail the main operation
+                // _logger.LogError(notificationEx, "Failed to send file upload notifications");
+            }
+
+            // خلاصه نوتیفیکیشن جداگانه حذف شد تا تکرار ایجاد نشود؛ نوتیفیکیشن کامل بالا ارسال شد
+            return Json(new { success = true });
         }
 
         // GET: Tasks/DownloadAttachment/5
@@ -1015,7 +1489,7 @@ namespace TaskManagementMvc.Controllers
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskAttachment> attachmentQuery;
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 // Admin can see all attachments
                 attachmentQuery = _context.TaskAttachments
@@ -1109,37 +1583,196 @@ namespace TaskManagementMvc.Controllers
             await _context.SaveChangesAsync();
         }
 
-        private async Task<List<Performer>> GetPerformersForUser()
+        private async Task<List<ApplicationUser>> GetPerformersForUser()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
-                return await _context.Performers.Where(p => p.IsActive).OrderBy(p => p.Name).ToListAsync();
+                return await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync();
             }
             else if (user?.CompanyId != null)
             {
-                return await _context.Performers.Where(p => p.CompanyId == user.CompanyId && p.IsActive).OrderBy(p => p.Name).ToListAsync();
+                return await _context.Users.Where(u => u.CompanyId == user.CompanyId && u.IsActive).OrderBy(u => u.Name).ToListAsync();
             }
-            return new List<Performer>();
+            return new List<ApplicationUser>();
         }
 
         private async Task<List<Project>> GetProjectsForUser()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole(Roles.SystemAdmin))
             {
                 return await _context.Projects.Where(p => p.IsActive).OrderBy(p => p.Name).ToListAsync();
             }
-            else if (user?.CompanyId != null)
+            else if (user != null)
             {
-                return await _context.Projects.Where(p => p.CompanyId == user.CompanyId && p.IsActive).OrderBy(p => p.Name).ToListAsync();
+                // Non-admin users can only see projects they have explicit access to (within their company)
+                var accessibleProjectIds = await _context.ProjectAccess
+                    .Where(pa => pa.UserId == user.Id && pa.IsActive)
+                    .Select(pa => pa.ProjectId)
+                    .ToListAsync();
+
+                return await _context.Projects
+                    .Where(p => p.IsActive && accessibleProjectIds.Contains(p.Id))
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
             }
             return new List<Project>();
+        }
+
+        private async Task<List<Company>> GetCompaniesForUser()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (User.IsInRole(Roles.SystemAdmin))
+            {
+                return await _context.Companies.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync();
+            }
+            else if (user?.CompanyId != null)
+            {
+                return await _context.Companies.Where(c => c.Id == user.CompanyId && c.IsActive).OrderBy(c => c.Name).ToListAsync();
+            }
+            return new List<Company>();
         }
 
         private bool TaskExists(int id)
         {
             return _context.Tasks.Any(e => e.Id == id);
+        }
+
+        // GET: Tasks/Board/{code}
+        [HttpGet("Tasks/Board/{code}")]
+        public async Task<IActionResult> Board(string? code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return NotFound();
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            var project = await _context.Projects
+                .Include(p => p.Company)
+                .FirstOrDefaultAsync(p => p.Code == code);
+
+            if (project == null)
+            {
+                return NotFound();
+            }
+
+            if (!User.IsInRole(Roles.SystemAdmin) && user?.CompanyId != project.CompanyId)
+            {
+                return Forbid();
+            }
+
+            var tasks = await _context.Tasks
+                .Include(t => t.Performer).ThenInclude(p => p.Grade)
+                .Include(t => t.CreatedBy)
+                .Where(t => t.ProjectId == project.Id && !t.IsArchived)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            ViewData["Project"] = project;
+            ViewData["ProjectId"] = project.Id;
+            ViewData["ProjectCode"] = project.Code;
+
+            // Build lists for create-task modal (performers and projects filtered by company when not admin)
+            List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> performerItems;
+            if (User.IsInRole(Roles.SystemAdmin))
+            {
+                var query = _context.Users
+                    .Where(u => u.IsActive)
+                    .OrderBy(u => u.FullName)
+                    .Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(u.Name, u.Id.ToString()));
+                performerItems = await query
+                    .ToListAsync();
+            }
+            else
+            {
+                performerItems = await _context.Users
+                    .Where(u => u.IsActive && u.CompanyId == project.CompanyId)
+                    .OrderBy(u => u.FullName)
+                    .Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(u.Name, u.Id.ToString()))
+                    .ToListAsync();
+            }
+
+            List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> projectItems;
+            if (User.IsInRole(Roles.SystemAdmin))
+            {
+                projectItems = await _context.Projects
+                    .Where(p => p.IsActive)
+                    .OrderBy(p => p.Name)
+                    .Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(p.Name, p.Id.ToString()))
+                    .ToListAsync();
+            }
+            else
+            {
+                projectItems = await _context.Projects
+                    .Where(p => p.IsActive && p.CompanyId == project.CompanyId)
+                    .OrderBy(p => p.Name)
+                    .Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(p.Name, p.Id.ToString()))
+                    .ToListAsync();
+            }
+
+            ViewData["ModalPerformers"] = performerItems;
+            ViewData["ModalProjects"] = projectItems;
+
+            // Build companies list for modal (admin can see all, others see only their company)
+            List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> companyItems;
+            if (User.IsInRole(Roles.SystemAdmin))
+            {
+                companyItems = await _context.Companies
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.Name)
+                    .Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(c.Name, c.Id.ToString()))
+                    .ToListAsync();
+            }
+            else
+            {
+                companyItems = await _context.Companies
+                    .Where(c => c.IsActive && c.Id == project.CompanyId)
+                    .OrderBy(c => c.Name)
+                    .Select(c => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem(c.Name, c.Id.ToString()))
+                    .ToListAsync();
+            }
+            ViewData["ModalCompanies"] = companyItems;
+
+            return View("Index", tasks);
+        }
+
+        // Helper methods for project access control
+        private async Task<bool> HasProjectAccess(ApplicationUser user, Project project)
+        {
+            // Admin always has access
+            if (User.IsInRole(Roles.SystemAdmin))
+                return true;
+
+            // Non-admin users need explicit access to projects
+            var hasAccess = await _context.ProjectAccess
+                .AnyAsync(pa => pa.ProjectId == project.Id && pa.UserId == user.Id && pa.IsActive);
+
+            return hasAccess;
+        }
+
+        private async Task<bool> HasProjectAccessById(ApplicationUser user, int? projectId)
+        {
+            if (projectId == null)
+                return false;
+
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project == null)
+                return false;
+
+            return await HasProjectAccess(user, project);
+        }
+
+        private string GetStatusDisplayName(TaskStatus status)
+        {
+            return status switch
+            {
+                TaskStatus.NotStarted => "شروع نشده",
+                TaskStatus.InProgress => "در حال انجام",
+                TaskStatus.Completed => "تکمیل شده",
+                _ => status.ToString()
+            };
         }
     }
 
@@ -1149,10 +1782,5 @@ namespace TaskManagementMvc.Controllers
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public double Hours { get; set; }
-    }
-
-    public class UpdateStatusRequest
-    {
-        public TaskStatus Status { get; set; }
     }
 }

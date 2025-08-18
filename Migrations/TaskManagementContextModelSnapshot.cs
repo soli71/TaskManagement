@@ -172,6 +172,10 @@ namespace TaskManagementMvc.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CardNumber")
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("CompanyId")
                         .HasColumnType("INTEGER");
 
@@ -198,6 +202,13 @@ namespace TaskManagementMvc.Migrations
 
                     b.Property<string>("FullName")
                         .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("GradeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IbanNumber")
+                        .HasMaxLength(26)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
@@ -248,6 +259,8 @@ namespace TaskManagementMvc.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("GradeId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -529,6 +542,45 @@ namespace TaskManagementMvc.Migrations
                     b.ToTable("InvoiceEmailLogs");
                 });
 
+            modelBuilder.Entity("TaskManagementMvc.Models.InvoiceJobRunLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsSuccess")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("RunCompletedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<DateTime>("RunStartedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TasksCount")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("ScheduleId");
+
+                    b.ToTable("InvoiceJobRunLogs");
+                });
+
             modelBuilder.Entity("TaskManagementMvc.Models.InvoiceLine", b =>
                 {
                     b.Property<int>("Id")
@@ -574,6 +626,60 @@ namespace TaskManagementMvc.Migrations
                     b.ToTable("InvoiceLines");
                 });
 
+            modelBuilder.Entity("TaskManagementMvc.Models.InvoiceSchedule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("CompanyId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("DayOfMonth")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("DayOfWeek")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HourOfDay")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(6);
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastRunAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("NextRunAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<int>("PeriodType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RecipientEmails")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("InvoiceSchedules");
+                });
+
             modelBuilder.Entity("TaskManagementMvc.Models.InvoiceTelegramLog", b =>
                 {
                     b.Property<int>("Id")
@@ -614,57 +720,6 @@ namespace TaskManagementMvc.Migrations
                     b.HasIndex("SentById");
 
                     b.ToTable("InvoiceTelegramLogs");
-                });
-
-            modelBuilder.Entity("TaskManagementMvc.Models.Performer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("CompanyId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("GradeId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("GradeId");
-
-                    b.ToTable("Performers");
                 });
 
             modelBuilder.Entity("TaskManagementMvc.Models.Permission", b =>
@@ -764,7 +819,7 @@ namespace TaskManagementMvc.Migrations
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Status")
+                    b.Property<int?>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(1);
@@ -782,6 +837,68 @@ namespace TaskManagementMvc.Migrations
                     b.HasIndex("ProjectManagerId");
 
                     b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("TaskManagementMvc.Models.ProjectAccess", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int?>("GrantedById")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ProjectId1")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RevokeReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RevokedById")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GrantedById");
+
+                    b.HasIndex("ProjectId1");
+
+                    b.HasIndex("RevokedById");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ProjectId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectAccess");
                 });
 
             modelBuilder.Entity("TaskManagementMvc.Models.RolePermission", b =>
@@ -924,9 +1041,6 @@ namespace TaskManagementMvc.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ApplicationUserId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime?>("ArchivedAt")
                         .HasColumnType("TEXT");
 
@@ -998,8 +1112,6 @@ namespace TaskManagementMvc.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("CompanyId");
 
@@ -1120,7 +1232,14 @@ namespace TaskManagementMvc.Migrations
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("TaskManagementMvc.Models.Grade", "Grade")
+                        .WithMany()
+                        .HasForeignKey("GradeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Company");
+
+                    b.Navigation("Grade");
                 });
 
             modelBuilder.Entity("TaskManagementMvc.Models.Grade", b =>
@@ -1179,6 +1298,24 @@ namespace TaskManagementMvc.Migrations
                     b.Navigation("SentBy");
                 });
 
+            modelBuilder.Entity("TaskManagementMvc.Models.InvoiceJobRunLog", b =>
+                {
+                    b.HasOne("TaskManagementMvc.Models.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TaskManagementMvc.Models.InvoiceSchedule", "Schedule")
+                        .WithMany("RunLogs")
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("Schedule");
+                });
+
             modelBuilder.Entity("TaskManagementMvc.Models.InvoiceLine", b =>
                 {
                     b.HasOne("TaskManagementMvc.Models.Invoice", "Invoice")
@@ -1195,6 +1332,16 @@ namespace TaskManagementMvc.Migrations
                     b.Navigation("Invoice");
 
                     b.Navigation("TaskItem");
+                });
+
+            modelBuilder.Entity("TaskManagementMvc.Models.InvoiceSchedule", b =>
+                {
+                    b.HasOne("TaskManagementMvc.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("TaskManagementMvc.Models.InvoiceTelegramLog", b =>
@@ -1215,23 +1362,6 @@ namespace TaskManagementMvc.Migrations
                     b.Navigation("SentBy");
                 });
 
-            modelBuilder.Entity("TaskManagementMvc.Models.Performer", b =>
-                {
-                    b.HasOne("TaskManagementMvc.Models.Company", "Company")
-                        .WithMany("Performers")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("TaskManagementMvc.Models.Grade", "Grade")
-                        .WithMany()
-                        .HasForeignKey("GradeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Company");
-
-                    b.Navigation("Grade");
-                });
-
             modelBuilder.Entity("TaskManagementMvc.Models.Project", b =>
                 {
                     b.HasOne("TaskManagementMvc.Models.Company", "Company")
@@ -1248,6 +1378,43 @@ namespace TaskManagementMvc.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("ProjectManager");
+                });
+
+            modelBuilder.Entity("TaskManagementMvc.Models.ProjectAccess", b =>
+                {
+                    b.HasOne("TaskManagementMvc.Models.ApplicationUser", "GrantedBy")
+                        .WithMany()
+                        .HasForeignKey("GrantedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TaskManagementMvc.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TaskManagementMvc.Models.Project", null)
+                        .WithMany("ProjectAccess")
+                        .HasForeignKey("ProjectId1");
+
+                    b.HasOne("TaskManagementMvc.Models.ApplicationUser", "RevokedBy")
+                        .WithMany()
+                        .HasForeignKey("RevokedById")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TaskManagementMvc.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GrantedBy");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("RevokedBy");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TaskManagementMvc.Models.RolePermission", b =>
@@ -1322,10 +1489,6 @@ namespace TaskManagementMvc.Migrations
 
             modelBuilder.Entity("TaskManagementMvc.Models.TaskItem", b =>
                 {
-                    b.HasOne("TaskManagementMvc.Models.ApplicationUser", null)
-                        .WithMany("AssignedTasks")
-                        .HasForeignKey("ApplicationUserId");
-
                     b.HasOne("TaskManagementMvc.Models.Company", null)
                         .WithMany("Tasks")
                         .HasForeignKey("CompanyId");
@@ -1339,8 +1502,8 @@ namespace TaskManagementMvc.Migrations
                         .WithMany("Tasks")
                         .HasForeignKey("GradeId");
 
-                    b.HasOne("TaskManagementMvc.Models.Performer", "Performer")
-                        .WithMany("Tasks")
+                    b.HasOne("TaskManagementMvc.Models.ApplicationUser", "Performer")
+                        .WithMany("AssignedTasks")
                         .HasForeignKey("PerformerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
@@ -1423,8 +1586,6 @@ namespace TaskManagementMvc.Migrations
 
                     b.Navigation("Invoices");
 
-                    b.Navigation("Performers");
-
                     b.Navigation("Projects");
 
                     b.Navigation("Tasks");
@@ -1446,9 +1607,9 @@ namespace TaskManagementMvc.Migrations
                     b.Navigation("TelegramLogs");
                 });
 
-            modelBuilder.Entity("TaskManagementMvc.Models.Performer", b =>
+            modelBuilder.Entity("TaskManagementMvc.Models.InvoiceSchedule", b =>
                 {
-                    b.Navigation("Tasks");
+                    b.Navigation("RunLogs");
                 });
 
             modelBuilder.Entity("TaskManagementMvc.Models.Permission", b =>
@@ -1459,6 +1620,8 @@ namespace TaskManagementMvc.Migrations
             modelBuilder.Entity("TaskManagementMvc.Models.Project", b =>
                 {
                     b.Navigation("Invoices");
+
+                    b.Navigation("ProjectAccess");
 
                     b.Navigation("Tasks");
                 });
