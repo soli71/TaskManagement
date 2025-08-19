@@ -77,48 +77,13 @@ namespace TaskManagementMvc.Controllers
             {
                 return Forbid();
             }
-
-            var roles = await _roleManager.Roles
-                .Where(r => r.IsActive)
-                .OrderBy(r => r.Name)
-                .ToListAsync();
-
-            // Filter roles based on user's level
-            var currentUserRole = GetCurrentUserHighestRole();
-            var assignableRoles = Roles.GetAssignableRoles(currentUserRole);
-            roles = roles.Where(r => assignableRoles.Contains(r.Name!)).ToList();
-
-            ViewData["Roles"] = roles;
-            
-            // Get companies for selection
-            if (User.IsInRole(Roles.SystemAdmin))
-            {
-                var companies = await _context.Companies
-                    .Where(c => c.IsActive)
-                    .OrderBy(c => c.Name)
-                    .ToListAsync();
-                ViewData["Companies"] = companies;
-            }
-            else
-            {
-                // For managers, set their company only
-                ViewData["Companies"] = new List<Company>();
-                if (currentUser?.CompanyId != null)
-                {
-                    var userCompany = await _context.Companies.FindAsync(currentUser.CompanyId);
-                    if (userCompany != null)
-                    {
-                        ViewData["Companies"] = new List<Company> { userCompany };
-                    }
-                }
-            }
-
             var model = new CreateUserViewModel();
             if (!User.IsInRole(Roles.SystemAdmin) && !User.IsInRole("SystemManager"))
             {
                 model.CompanyId = currentUser?.CompanyId;
             }
 
+            await PopulateCreateViewModel(model, currentUser);
             return View(model);
         }
 
@@ -256,7 +221,7 @@ namespace TaskManagementMvc.Controllers
                 }
             }
 
-            await LoadCreateViewData(currentUser);
+            await PopulateCreateViewModel(model, currentUser);
             return View(model);
         }
         catch (Exception ex)
@@ -284,7 +249,8 @@ namespace TaskManagementMvc.Controllers
             }
             catch { /* Ignore notification errors */ }
             
-            await LoadCreateViewData(await _userManager.GetUserAsync(User));
+            var currentUser = await _userManager.GetUserAsync(User);
+            await PopulateCreateViewModel(model, currentUser);
             return View(model);
         }
     }
@@ -296,6 +262,16 @@ namespace TaskManagementMvc.Controllers
             if (user == null)
             {
                 return NotFound();
+            }
+
+            // محدودیت: مدیر شرکت فقط کاربران شرکت خودش را ببیند/ویرایش کند
+            if (!User.IsInRole(Roles.SystemAdmin))
+            {
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser?.CompanyId == null || currentUser.CompanyId != user.CompanyId)
+                {
+                    return Forbid();
+                }
             }
 
             var userRoles = await _userManager.GetRolesAsync(user);
@@ -387,11 +363,27 @@ namespace TaskManagementMvc.Controllers
                     return NotFound();
                 }
 
+                // محدودیت شرکت برای غیر ادمین
+                if (!User.IsInRole(Roles.SystemAdmin))
+                {
+                    var currentUser = await _userManager.GetUserAsync(User);
+                    if (currentUser?.CompanyId == null || currentUser.CompanyId != user.CompanyId)
+                    {
+                        return Forbid();
+                    }
+                    // جلوگیری از تغییر شرکت توسط مدیر شرکت
+                    model.CompanyId = user.CompanyId;
+                }
+
+                // Update scalar fields
                 user.FullName = model.FullName;
                 user.UserName = model.UserName;
                 user.Email = model.Email;
                 user.PhoneNumber = model.PhoneNumber;
-                user.IsActive = model.IsActive;
+                if (Request.Form.ContainsKey("IsActive")) // جلوگیری از غیرفعال شدن ناخواسته
+                {
+                    user.IsActive = model.IsActive;
+                }
                 user.Notes = model.Notes;
                 user.CompanyId = model.CompanyId;
                 user.GradeId = model.GradeId;
@@ -402,70 +394,76 @@ namespace TaskManagementMvc.Controllers
 
                 if (result.Succeeded)
                 {
-                    // Update roles
-                    var currentRoles = await _userManager.GetRolesAsync(user);
-                    var rolesToRemove = currentRoles.Except(model.SelectedRoles).ToList();
-                    var rolesToAdd = model.SelectedRoles.Except(currentRoles).ToList();
-
-                    if (rolesToRemove.Any())
+                    // Update roles only if the roles field was posted, to avoid clearing accidentally
+                    var rolesFieldPosted = Request.Form.ContainsKey("SelectedRoles");
+                    if (model.SelectedRoles == null)
+                        model.SelectedRoles = new List<string>();
+                    if (rolesFieldPosted)
                     {
-                        await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                        var currentRoles = await _userManager.GetRolesAsync(user);
+                        var rolesToRemove = currentRoles.Except(model.SelectedRoles).ToList();
+                        var rolesToAdd = model.SelectedRoles.Except(currentRoles).ToList();
 
-                        var roleEntitiesToRemove = await _roleManager.Roles.Where(r => rolesToRemove.Contains(r.Name!)).ToListAsync();
-                        foreach (var role in roleEntitiesToRemove)
+                        if (rolesToRemove.Any())
                         {
-                            var rels = await _context.UserRoles
-                                .Where(ur => ur.UserId == user.Id && ur.RoleId == role.Id && ur.IsActive)
-                                .ToListAsync();
-                            foreach (var rel in rels)
+                            await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+
+                            var roleEntitiesToRemove = await _roleManager.Roles.Where(r => rolesToRemove.Contains(r.Name!)).ToListAsync();
+                            foreach (var role in roleEntitiesToRemove)
                             {
-                                rel.IsActive = false;
+                                var rels = await _context.UserRoles
+                                    .Where(ur => ur.UserId == user.Id && ur.RoleId == role.Id && ur.IsActive)
+                                    .ToListAsync();
+                                foreach (var rel in rels)
+                                {
+                                    rel.IsActive = false;
+                                }
+                            }
+                            await _context.SaveChangesAsync();
+
+                            // اگر نقش Manager حذف شده، دسترسی‌های پروژه را حذف کن
+                            if (rolesToRemove.Contains("CompanyManager") && user.CompanyId.HasValue)
+                            {
+                                var executorUserId = int.Parse(User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+                                await _projectAccessService.RevokeAllCompanyProjectsAccessFromUser(
+                                    user.Id, 
+                                    user.CompanyId.Value, 
+                                    executorUserId
+                                );
                             }
                         }
-                        await _context.SaveChangesAsync();
 
-                        // اگر نقش Manager حذف شده، دسترسی‌های پروژه را حذف کن
-                        if (rolesToRemove.Contains("CompanyManager") && user.CompanyId.HasValue)
+                        if (rolesToAdd.Any())
                         {
-                            var executorUserId = int.Parse(User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-                            await _projectAccessService.RevokeAllCompanyProjectsAccessFromUser(
-                                user.Id, 
-                                user.CompanyId.Value, 
-                                executorUserId
-                            );
-                        }
-                    }
+                            await _userManager.AddToRolesAsync(user, rolesToAdd);
 
-                    if (rolesToAdd.Any())
-                    {
-                        await _userManager.AddToRolesAsync(user, rolesToAdd);
-
-                        var roleEntitiesToAdd = await _roleManager.Roles.Where(r => rolesToAdd.Contains(r.Name!)).ToListAsync();
-                        var userIdStr2 = User?.FindFirstValue(ClaimTypes.NameIdentifier);
-                        int? assignedById2 = int.TryParse(userIdStr2, out var uid2) ? uid2 : (int?)null;
-                        foreach (var role in roleEntitiesToAdd)
-                        {
-                            _context.UserRoles.Add(new UserRole
+                            var roleEntitiesToAdd = await _roleManager.Roles.Where(r => rolesToAdd.Contains(r.Name!)).ToListAsync();
+                            var userIdStr2 = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+                            int? assignedById2 = int.TryParse(userIdStr2, out var uid2) ? uid2 : (int?)null;
+                            foreach (var role in roleEntitiesToAdd)
                             {
-                                UserId = user.Id,
-                                RoleId = role.Id,
-                                AssignedAt = DateTime.UtcNow,
-                                AssignedById = assignedById2,
-                                IsActive = true
-                            });
-                        }
-                        await _context.SaveChangesAsync();
+                                _context.UserRoles.Add(new UserRole
+                                {
+                                    UserId = user.Id,
+                                    RoleId = role.Id,
+                                    AssignedAt = DateTime.UtcNow,
+                                    AssignedById = assignedById2,
+                                    IsActive = true
+                                });
+                            }
+                            await _context.SaveChangesAsync();
 
-                        // اگر نقش Manager اضافه شده، دسترسی به تمام پروژه‌های شرکت بده
-                        if (rolesToAdd.Contains("CompanyManager") && user.CompanyId.HasValue)
-                        {
-                            await _projectAccessService.GrantAllCompanyProjectsAccessToManager(
-                                user.Id, 
-                                user.CompanyId.Value, 
-                                assignedById2
-                            );
+                            // اگر نقش Manager اضافه شده، دسترسی به تمام پروژه‌های شرکت بده
+                            if (rolesToAdd.Contains("CompanyManager") && user.CompanyId.HasValue)
+                            {
+                                await _projectAccessService.GrantAllCompanyProjectsAccessToManager(
+                                    user.Id, 
+                                    user.CompanyId.Value, 
+                                    assignedById2
+                                );
+                            }
                         }
-                    }
+                    } // end roles update block
 
                     TempData["SuccessMessage"] = "کاربر با موفقیت ویرایش شد.";
                     return RedirectToAction(nameof(Index));
@@ -658,6 +656,45 @@ namespace TaskManagementMvc.Controllers
                     if (userCompany != null)
                     {
                         ViewData["Companies"] = new List<Company> { userCompany };
+                    }
+                }
+            }
+        }
+
+        // نسخه جدید برای پر کردن ViewModel ایجاد کاربر (استفاده به جای ViewData)
+        private async Task PopulateCreateViewModel(CreateUserViewModel model, ApplicationUser? currentUser)
+        {
+            var roles = await _roleManager.Roles
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.Name)
+                .ToListAsync();
+
+            var currentUserRole = GetCurrentUserHighestRole();
+            var assignableRoles = Roles.GetAssignableRoles(currentUserRole);
+            model.Roles = roles.Where(r => assignableRoles.Contains(r.Name!)).ToList();
+
+            // Grades
+            model.Grades = await _context.Grades
+                .Where(g => g.IsActive)
+                .OrderBy(g => g.Name)
+                .ToListAsync();
+
+            if (User.IsInRole(Roles.SystemAdmin))
+            {
+                model.Companies = await _context.Companies
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
+            }
+            else
+            {
+                model.Companies = new List<Company>();
+                if (currentUser?.CompanyId != null)
+                {
+                    var userCompany = await _context.Companies.FindAsync(currentUser.CompanyId);
+                    if (userCompany != null)
+                    {
+                        model.Companies.Add(userCompany);
                     }
                 }
             }

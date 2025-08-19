@@ -6,12 +6,22 @@ using TaskManagementMvc.Models;
 using TaskManagementMvc.Services;
 using TaskManagementMvc.Services.Authorization;
 using StackExchange.Redis;
+using TaskManagementMvc.Interceptors;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions{ Args = args });
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<TaskManagementContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Configure EF Core database provider.
+// Default to SQLite for local development unless UseMySql flag is set in config.
+
+    builder.Services.AddSingleton<AuditingInterceptor>();
+    builder.Services.AddDbContext<TaskManagementContext>((sp, options) =>
+    {
+        var auditingInterceptor = sp.GetRequiredService<AuditingInterceptor>();
+        options
+            .UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version(8, 0, 21)))
+            .AddInterceptors(auditingInterceptor);
+    });
 
 // Configure Identity
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -69,7 +79,7 @@ if (notificationSettings.UseRedis)
     catch (Exception ex)
     {
         // اگر Redis در دسترس نباشد، null اضافه کنیم
-        Console.WriteLine($"Redis connection failed: {ex.Message}. Notifications will work without Redis persistence.");
+        Console.WriteLine($"Redis connection failed: {ex.Message}. Notifications will work without Redis persistence. - Program.cs:75");
         builder.Services.AddSingleton<IConnectionMultiplexer>(provider => null);
     }
 }
@@ -97,11 +107,8 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<TaskManagementContext>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
-
     db.Database.Migrate();
-
-    // Initialize database with sample data
-    DbInitializer.Initialize(db, userManager, roleManager);
+    await DbInitializer.Initialize(db, userManager, roleManager);
 }
 
 if (!app.Environment.IsDevelopment())

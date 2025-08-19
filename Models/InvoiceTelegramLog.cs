@@ -26,7 +26,7 @@ namespace TaskManagementMvc.Models
         [StringLength(1000)]
         public string? Error { get; set; }
 
-        public DateTime SentAt { get; set; } = DateTime.Now;
+    public DateTime SentAt { get; set; }
 
         public int? SentById { get; set; }
 

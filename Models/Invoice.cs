@@ -46,7 +46,7 @@ namespace TaskManagementMvc.Models
         public DateTime? EmailSentAt { get; set; }
 
         [Display(Name = "تاریخ ایجاد")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; }
 
         [Display(Name = "تاریخ به‌روزرسانی")]
         public DateTime? UpdatedAt { get; set; }

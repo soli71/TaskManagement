@@ -21,7 +21,7 @@ namespace TaskManagementMvc.Models
 
         public long FileSize { get; set; }
 
-        public DateTime UploadedAt { get; set; } = DateTime.Now;
+    public DateTime UploadedAt { get; set; }
 
         public int? UploadedById { get; set; }
 

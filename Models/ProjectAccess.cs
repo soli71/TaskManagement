@@ -14,7 +14,7 @@ namespace TaskManagementMvc.Models
         public int UserId { get; set; }
         public ApplicationUser User { get; set; } = null!;
         
-        public DateTime GrantedAt { get; set; } = DateTime.Now;
+    public DateTime GrantedAt { get; set; }
         
         public int? GrantedById { get; set; }
         public ApplicationUser? GrantedBy { get; set; }

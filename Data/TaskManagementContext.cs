@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TaskManagementMvc.Models;
 using TaskStatus = TaskManagementMvc.Models.TaskStatus;
@@ -34,6 +35,18 @@ namespace TaskManagementMvc.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Identity (MySQL) key length configuration to avoid BLOB/TEXT index errors
+            modelBuilder.Entity<IdentityUserLogin<int>>(entity =>
+            {
+                entity.Property(e => e.LoginProvider).HasMaxLength(128);
+                entity.Property(e => e.ProviderKey).HasMaxLength(128);
+            });
+            modelBuilder.Entity<IdentityUserToken<int>>(entity =>
+            {
+                entity.Property(e => e.LoginProvider).HasMaxLength(128);
+                entity.Property(e => e.Name).HasMaxLength(128);
+            });
+
             // Company configuration
             modelBuilder.Entity<Company>(entity =>
             {
@@ -46,7 +59,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Website).HasMaxLength(200);
                 entity.Property(e => e.LogoPath).HasMaxLength(500);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             });
 
             // Project configuration
@@ -61,7 +74,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Priority).HasDefaultValue(ProjectPriority.Medium);
                 entity.Property(e => e.Status).HasDefaultValue(ProjectStatus.Active);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
 
                 entity.HasOne(e => e.Company)
                     .WithMany(e => e.Projects)
@@ -80,7 +93,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.FullName).HasMaxLength(100);
                 entity.Property(e => e.Notes).HasMaxLength(500);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
                 entity.Property(e => e.CompanyRole).HasDefaultValue(CompanyRole.User);
                 entity.Property(e => e.IbanNumber).HasMaxLength(26);
                 entity.Property(e => e.CardNumber).HasMaxLength(16);
@@ -106,7 +119,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Priority).HasDefaultValue(TaskPriority.Medium);
                 entity.Property(e => e.Hours).HasDefaultValue(0);
                 entity.Property(e => e.IsArchived).HasDefaultValue(false);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
 
                 entity.HasOne(e => e.Performer)
                     .WithMany(e => e.AssignedTasks)
@@ -137,7 +150,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.HourlyRate).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
 
                 entity.HasOne(e => e.Company)
                     .WithMany(e => e.Grades)
@@ -155,7 +168,9 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.CustomerName).HasMaxLength(200);
                 entity.Property(e => e.CustomerAddress).HasMaxLength(500);
                 entity.Property(e => e.Status).HasDefaultValue(InvoiceStatus.Draft);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                // Ensure MySQL-friendly timestamp with automatic default
+                entity.Property(e => e.CreatedAt)
+                    .HasColumnType("timestamp");
 
                 entity.HasOne(e => e.CreatedBy)
                     .WithMany(e => e.CreatedInvoices)
@@ -201,7 +216,7 @@ namespace TaskManagementMvc.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
-                entity.Property(e => e.UploadedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.UploadedAt).HasColumnType("timestamp");
 
                 entity.HasOne(e => e.Task)
                     .WithMany(e => e.Attachments)
@@ -221,7 +236,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Field).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.OldValue).HasMaxLength(1000);
                 entity.Property(e => e.NewValue).HasMaxLength(1000);
-                entity.Property(e => e.ChangedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.ChangedAt).HasColumnType("timestamp");
 
                 entity.HasOne(e => e.Task)
                     .WithMany(e => e.HistoryEntries)
@@ -244,7 +259,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.AvailableVariables).HasMaxLength(1000);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             });
 
             // InvoiceEmailLog configuration
@@ -255,7 +270,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Subject).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Body).IsRequired();
                 entity.Property(e => e.Error).HasMaxLength(1000);
-                entity.Property(e => e.SentAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.SentAt).HasColumnType("timestamp");
 
                 entity.HasOne(e => e.Invoice)
                     .WithMany(e => e.EmailLogs)
@@ -275,7 +290,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.ChatId).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.MessageText).IsRequired();
                 entity.Property(e => e.Error).HasMaxLength(1000);
-                entity.Property(e => e.SentAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.SentAt).HasColumnType("timestamp");
 
                 entity.HasOne(e => e.Invoice)
                     .WithMany(e => e.TelegramLogs)
@@ -297,7 +312,7 @@ namespace TaskManagementMvc.Data
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.Group).HasMaxLength(100);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             });
 
             // ApplicationRole configuration
@@ -305,7 +320,9 @@ namespace TaskManagementMvc.Data
             {
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            // Use timestamp column for broader MySQL/MariaDB compatibility with default CURRENT_TIMESTAMP
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp");
             });
 
             // UserRole configuration
@@ -313,7 +330,7 @@ namespace TaskManagementMvc.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => new { e.UserId, e.RoleId }).IsUnique();
-                entity.Property(e => e.AssignedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.AssignedAt).HasColumnType("timestamp");
                 entity.Property(e => e.Notes).HasMaxLength(500);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
 
@@ -338,7 +355,7 @@ namespace TaskManagementMvc.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => new { e.RoleId, e.PermissionId }).IsUnique();
-                entity.Property(e => e.AssignedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.AssignedAt).HasColumnType("timestamp");
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
 
                 entity.HasOne(e => e.Role)
@@ -362,7 +379,7 @@ namespace TaskManagementMvc.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.HasIndex(e => new { e.ProjectId, e.UserId }).IsUnique();
-                entity.Property(e => e.GrantedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.GrantedAt).HasColumnType("timestamp");
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.Notes).HasMaxLength(500);
                 entity.Property(e => e.Reason).HasMaxLength(500);
@@ -412,7 +429,7 @@ namespace TaskManagementMvc.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Error).HasMaxLength(1000);
-                entity.Property(e => e.RunStartedAt).HasDefaultValueSql("GETDATE()");
+                entity.Property(e => e.RunStartedAt).HasColumnType("timestamp");
                 entity.Property(e => e.RunCompletedAt).HasColumnType("datetime");
 
                 entity.HasOne(e => e.Schedule)

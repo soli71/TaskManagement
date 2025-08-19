@@ -13,7 +13,7 @@ namespace TaskManagementMvc.Models
         public bool IsActive { get; set; } = true;
 
         [Display(Name = "تاریخ ایجاد")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; }
 
         [Display(Name = "آخرین ورود")]
         public DateTime? LastLoginAt { get; set; }

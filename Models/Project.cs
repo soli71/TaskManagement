@@ -51,7 +51,7 @@ namespace TaskManagementMvc.Models
         public bool IsActive { get; set; } = true;
 
         [Display(Name = "تاریخ ایجاد")]
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; }
 
         [Display(Name = "تاریخ به‌روزرسانی")]
         public DateTime? UpdatedAt { get; set; }

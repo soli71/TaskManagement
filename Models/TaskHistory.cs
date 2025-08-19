@@ -27,7 +27,7 @@ namespace TaskManagementMvc.Models
         [StringLength(500)]
         public string? Note { get; set; }
 
-        public DateTime ChangedAt { get; set; } = DateTime.Now;
+    public DateTime ChangedAt { get; set; }
 
         public int? ChangedById { get; set; }
 

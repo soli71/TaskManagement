@@ -1,11 +1,5 @@
 @model TaskManagementMvc.Models.ViewModels.CreateUserViewModel
 
-@{
-    var roles = ViewData["Roles"] as List<TaskManagementMvc.Models.ApplicationRole> ?? new();
-    var companies = ViewData["Companies"] as List<TaskManagementMvc.Models.Company> ?? new();
-    var grades = ViewData["Grades"] as List<TaskManagementMvc.Models.Grade> ?? new();
-}
-
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">ایجاد کاربر</h2>
@@ -26,7 +20,7 @@
             <div class="col-md-4">
                 <corp-select asp-for="CompanyId" placeholder="انتخاب شرکت" icon="bi-building" dense>
                     <option value="">-- انتخاب شرکت --</option>
-                    @foreach (var c in companies)
+                    @foreach (var c in Model.Companies)
                     {
                         <option value="@c.Id">@c.Name</option>
                     }
@@ -35,7 +29,7 @@
             <div class="col-md-4">
                 <corp-select asp-for="GradeId" placeholder="انتخاب رتبه" icon="bi-bar-chart" dense>
                     <option value="">-- انتخاب رتبه --</option>
-                    @foreach (var g in grades)
+                    @foreach (var g in Model.Grades)
                     {
                         <option value="@g.Id">@g.Name</option>
                     }
@@ -52,7 +46,7 @@
 
         <h5 class="mt-4 mb-2">نقش‌ها</h5>
         <div class="row g-2">
-            @foreach (var r in roles)
+            @foreach (var r in Model.Roles)
             {
                 <div class="col-md-3">
                     <div class="corp-field mb-2">

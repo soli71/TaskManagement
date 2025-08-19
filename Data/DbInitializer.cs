@@ -5,9 +5,9 @@ namespace TaskManagementMvc.Data
 {
     public static class DbInitializer
     {
-        public static async void Initialize(TaskManagementContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
+        public static async Task Initialize(TaskManagementContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
         {
-            context.Database.EnsureCreated();
+            // Database is migrated externally (Program.cs). Do not call EnsureCreated with migrations.
 
             // Seed Permissions if none exist
             if (!context.Permissions.Any())

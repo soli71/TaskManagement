@@ -22,7 +22,7 @@ namespace TaskManagementMvc.Models
         public virtual ApplicationRole Role { get; set; } = null!;
 
         [Display(Name = "تاریخ تخصیص")]
-        public DateTime AssignedAt { get; set; } = DateTime.Now;
+    public DateTime AssignedAt { get; set; }
 
         [Display(Name = "تخصیص داده شده توسط")]
         public int? AssignedById { get; set; }
