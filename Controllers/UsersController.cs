@@ -64,7 +64,19 @@ namespace TaskManagementMvc.Controllers
 
             var rolesByUser = userRoleLinks
                 .GroupBy(ur => ur.UserId)
-                .ToDictionary(g => g.Key, g => g.Select(r => r.Role.Name ?? string.Empty).Where(n => !string.IsNullOrEmpty(n)).Distinct().OrderBy(n => n).ToList());
+                .ToDictionary(
+                    g => g.Key,
+                    g =>
+                    {
+                        var roleNames = g
+                            .Select(r => r.Role.Name ?? string.Empty)
+                            .Where(n => !string.IsNullOrEmpty(n))
+                            .Distinct()
+                            .OrderBy(n => n)
+                            .ToList();
+                        return roleNames;
+                    }
+                );
 
             var list = userEntities.Select(u => new UserListViewModel
             {

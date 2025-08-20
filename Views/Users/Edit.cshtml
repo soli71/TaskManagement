@@ -50,7 +50,16 @@
                     }
                 </corp-select>
             </div>
-            <div class="col-md-4"><corp-check asp-for="IsActive" dense></corp-check></div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <div class="form-check">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label">فعال</label>
+                        <!-- Add a hidden field to ensure false is sent when unchecked -->
+                        <input type="hidden" name="IsActive" value="false" />
+                    </div>
+                </div>
+            </div>
         </div>
 
         <h5 class="mt-4 mb-2">نقش‌ها</h5>
