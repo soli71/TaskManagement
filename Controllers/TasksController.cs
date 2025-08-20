@@ -1367,6 +1367,132 @@ namespace TaskManagementMvc.Controllers
             return View(tasks);
         }
 
+        // GET: Tasks/InvoicedTasks
+        [Authorize(Roles = "SystemAdmin")]
+        public async Task<IActionResult> InvoicedTasks()
+        {
+            var tasks = await _context.Tasks
+                .Include(t => t.Performer)
+                .ThenInclude(p => p.Grade)
+                .Include(t => t.Project)
+                .ThenInclude(p => p.Company)
+                .Where(t => t.Status == TaskStatus.Invoiced)
+                .OrderByDescending(t => t.UpdatedAt)
+                .ToListAsync();
+
+            return View(tasks);
+        }
+
+        // POST: Tasks/RemoveFromInvoice/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SystemAdmin")]
+        public async Task<IActionResult> RemoveFromInvoice(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var task = await _context.Tasks.FindAsync(id);
+
+            if (task == null)
+            {
+                return NotFound();
+            }
+
+            // Change status from Invoiced back to Completed
+            task.Status = TaskStatus.Completed;
+            task.UpdatedAt = DateTime.Now;
+            task.UpdatedById = user?.Id;
+
+            // Add history entry
+            var historyEntry = new TaskHistory
+            {
+                TaskId = task.Id,
+                Field = "Status",
+                OldValue = TaskStatus.Invoiced.ToString(),
+                NewValue = TaskStatus.Completed.ToString(),
+                ChangedAt = DateTime.Now,
+                ChangedById = user?.Id
+            };
+
+            _context.TaskHistories.Add(historyEntry);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "تسک از حالت فاکتور شده خارج شد.";
+            return RedirectToAction(nameof(InvoicedTasks));
+        }
+
+        // POST: Tasks/BulkRemoveFromInvoice
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SystemAdmin")]
+        public async Task<IActionResult> BulkRemoveFromInvoice(List<int> taskIds)
+        {
+            if (taskIds == null || !taskIds.Any())
+            {
+                TempData["ErrorMessage"] = "هیچ تسکی انتخاب نشده است.";
+                return RedirectToAction(nameof(InvoicedTasks));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            var tasks = await _context.Tasks
+                .Where(t => taskIds.Contains(t.Id) && t.Status == TaskStatus.Invoiced)
+                .ToListAsync();
+
+            if (!tasks.Any())
+            {
+                TempData["ErrorMessage"] = "هیچ تسک فاکتور شده‌ای برای برگرداندن یافت نشد.";
+                return RedirectToAction(nameof(InvoicedTasks));
+            }
+
+            var successCount = 0;
+            var historyEntries = new List<TaskHistory>();
+
+            foreach (var task in tasks)
+            {
+                try
+                {
+                    // Change status from Invoiced back to Completed
+                    task.Status = TaskStatus.Completed;
+                    task.UpdatedAt = DateTime.Now;
+                    task.UpdatedById = user?.Id;
+
+                    // Add history entry
+                    var historyEntry = new TaskHistory
+                    {
+                        TaskId = task.Id,
+                        Field = "Status",
+                        OldValue = TaskStatus.Invoiced.ToString(),
+                        NewValue = TaskStatus.Completed.ToString(),
+                        ChangedAt = DateTime.Now,
+                        ChangedById = user?.Id
+                    };
+                    historyEntries.Add(historyEntry);
+                    successCount++;
+                }
+                catch (Exception)
+                {
+                    // Continue with other tasks if one fails
+                    continue;
+                }
+            }
+
+            if (historyEntries.Any())
+            {
+                _context.TaskHistories.AddRange(historyEntries);
+                await _context.SaveChangesAsync();
+            }
+
+            if (successCount > 0)
+            {
+                TempData["SuccessMessage"] = $"{successCount} تسک با موفقیت از حالت فاکتور شده خارج شد.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "خطا در برگرداندن تسک‌ها از حالت فاکتور شده.";
+            }
+
+            return RedirectToAction(nameof(InvoicedTasks));
+        }
+
         // POST: Tasks/UploadAttachment/5
         [HttpPost]
         [ValidateAntiForgeryToken]

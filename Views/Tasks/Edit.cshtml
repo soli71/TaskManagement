@@ -1,6 +1,6 @@
 @model TaskFormViewModel
 
-<form asp-action="Edit" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+<form id="editTaskForm" asp-action="Edit" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
 

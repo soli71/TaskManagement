@@ -1,0 +1,414 @@
+@model IEnumerable<TaskManagementMvc.Models.TaskItem>
+@{
+    ViewData["Title"] = "تسک‌های فاکتور شده";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">
+        <i class="bi bi-receipt-cutoff me-2"></i>
+        تسک‌های فاکتور شده
+    </h2>
+    <span class="badge bg-info">@Model.Count() تسک</span>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>
+        هیچ تسک فاکتور شده‌ای یافت نشد.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <button type="button" id="bulkRemoveBtn" class="btn btn-warning me-2" disabled>
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>
+                        برگرداندن انتخاب شده‌ها (<span id="selectedCount">0</span>)
+                    </button>
+                    <button type="button" id="selectAllBtn" class="btn btn-outline-secondary">
+                        <i class="bi bi-check-square me-1"></i>
+                        انتخاب همه
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllCheckbox">
+                                </div>
+                            </th>
+                            <th width="60">شناسه</th>
+                            <th>عنوان تسک</th>
+                            <th width="120">انجام‌دهنده</th>
+                            <th width="100">ساعت کار</th>
+                            <th width="120">پروژه</th>
+                            <th width="120">شرکت</th>
+                            <th width="120">تاریخ به‌روزرسانی</th>
+                            <th width="100">عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var task in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input task-checkbox" type="checkbox" value="@task.Id" data-task-title="@task.Title">
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">#@task.Id</span>
+                                </td>
+                                <td>
+                                    <div class="fw-medium">@task.Title</div>
+                                    @if (!string.IsNullOrEmpty(task.Description))
+                                    {
+                                        <div class="text-muted small">@task.Description.Substring(0, Math.Min(task.Description.Length, 50))@(task.Description.Length > 50 ? "..." : "")</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (task.Performer != null)
+                                    {
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                <div class="avatar-title bg-light text-primary rounded-circle">
+                                                    @task.Performer.Name?.Substring(0, 1).ToUpper()
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium">@task.Performer.Name</div>
+                                                @if (task.Performer.Grade != null)
+                                                {
+                                                    <div class="text-muted small">@task.Performer.Grade.Name</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">تعیین نشده</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">@task.Hours ساعت</span>
+                                </td>
+                                <td>
+                                    @if (task.Project != null)
+                                    {
+                                        <span class="text-primary">@task.Project.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">بدون پروژه</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (task.Project?.Company != null)
+                                    {
+                                        <span class="text-dark">@task.Project.Company.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">نامشخص</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (task.UpdatedAt.HasValue)
+                                    {
+                                        <div class="text-muted small">
+                                            @task.UpdatedAt.Value.ToString("yyyy/MM/dd")
+                                            <br />
+                                            @task.UpdatedAt.Value.ToString("HH:mm")
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">نامشخص</span>
+                                    }
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-warning btn-sm" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#removeFromInvoiceModal"
+                                            data-task-id="@task.Id"
+                                            data-task-title="@task.Title">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                        برگرداندن
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary">جمع کل ساعات</h5>
+                    <h3 class="text-success">@Model.Sum(t => t.Hours) ساعت</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary">تعداد تسک‌ها</h5>
+                    <h3 class="text-info">@Model.Count() تسک</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary">میانگین ساعت</h5>
+                    <h3 class="text-warning">@(Model.Any() ? Math.Round(Model.Average(t => t.Hours), 1) : 0) ساعت</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Bulk Remove from Invoice Confirmation Modal -->
+<div class="modal fade" id="bulkRemoveFromInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید برگرداندن دسته‌جمعی از فاکتور</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از برگرداندن <span id="bulkSelectedCount" class="fw-bold text-primary"></span> تسک انتخاب شده از حالت فاکتور شده اطمینان دارید؟</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    این تسک‌ها به حالت "تکمیل شده" برگردانده خواهند شد.
+                </div>
+                <div class="border rounded p-3 mb-3" style="max-height: 200px; overflow-y: auto;">
+                    <h6 class="mb-2">تسک‌های انتخاب شده:</h6>
+                    <ul id="selectedTasksList" class="list-unstyled mb-0"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" id="confirmBulkRemove" class="btn btn-warning">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    برگرداندن همه
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove from Invoice Confirmation Modal -->
+<div class="modal fade" id="removeFromInvoiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید برگرداندن از فاکتور</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از برگرداندن تسک "<span id="taskTitle"></span>" از حالت فاکتور شده اطمینان دارید؟</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    این تسک به حالت "تکمیل شده" برگردانده خواهد شد.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <form method="post" style="display: inline;">
+                    <input type="hidden" name="id" id="taskIdInput" />
+                    <button type="submit" class="btn btn-warning" asp-action="RemoveFromInvoice">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>
+                        برگرداندن
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Handle task selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const taskCheckboxes = document.querySelectorAll('.task-checkbox');
+            const bulkRemoveBtn = document.getElementById('bulkRemoveBtn');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const selectedCountSpan = document.getElementById('selectedCount');
+            const removeFromInvoiceModal = document.getElementById('removeFromInvoiceModal');
+            const bulkRemoveFromInvoiceModal = document.getElementById('bulkRemoveFromInvoiceModal');
+
+            // Update UI based on selection
+            function updateSelectionUI() {
+                const checkedBoxes = document.querySelectorAll('.task-checkbox:checked');
+                const count = checkedBoxes.length;
+                
+                selectedCountSpan.textContent = count;
+                bulkRemoveBtn.disabled = count === 0;
+                
+                // Update select all checkbox state
+                if (count === 0) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = false;
+                } else if (count === taskCheckboxes.length) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = true;
+                } else {
+                    selectAllCheckbox.indeterminate = true;
+                    selectAllCheckbox.checked = false;
+                }
+
+                // Update select all button text
+                if (count === taskCheckboxes.length && count > 0) {
+                    selectAllBtn.innerHTML = '<i class="bi bi-square me-1"></i>لغو انتخاب همه';
+                } else {
+                    selectAllBtn.innerHTML = '<i class="bi bi-check-square me-1"></i>انتخاب همه';
+                }
+            }
+
+            // Select all functionality
+            selectAllCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                taskCheckboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                updateSelectionUI();
+            });
+
+            // Select all button functionality
+            selectAllBtn.addEventListener('click', function() {
+                const checkedCount = document.querySelectorAll('.task-checkbox:checked').length;
+                const shouldSelectAll = checkedCount !== taskCheckboxes.length;
+                
+                taskCheckboxes.forEach(checkbox => {
+                    checkbox.checked = shouldSelectAll;
+                });
+                updateSelectionUI();
+            });
+
+            // Individual checkbox change
+            taskCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectionUI);
+            });
+
+            // Bulk remove button click
+            bulkRemoveBtn.addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.task-checkbox:checked');
+                if (checkedBoxes.length === 0) return;
+
+                // Update modal content
+                document.getElementById('bulkSelectedCount').textContent = checkedBoxes.length;
+                
+                const tasksList = document.getElementById('selectedTasksList');
+                tasksList.innerHTML = '';
+                
+                checkedBoxes.forEach(checkbox => {
+                    const taskTitle = checkbox.getAttribute('data-task-title');
+                    const taskId = checkbox.value;
+                    const listItem = document.createElement('li');
+                    listItem.className = 'mb-1';
+                    listItem.innerHTML = `<i class="bi bi-check-circle-fill text-primary me-2"></i>#${taskId} - ${taskTitle}`;
+                    tasksList.appendChild(listItem);
+                });
+
+                // Show modal
+                const modal = new bootstrap.Modal(bulkRemoveFromInvoiceModal);
+                modal.show();
+            });
+
+            // Confirm bulk remove
+            document.getElementById('confirmBulkRemove').addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.task-checkbox:checked');
+                const taskIds = Array.from(checkedBoxes).map(cb => cb.value);
+                
+                if (taskIds.length === 0) return;
+
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("BulkRemoveFromInvoice", "Tasks")';
+                
+                // Add anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+
+                // Add task IDs
+                taskIds.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'taskIds';
+                    input.value = id;
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+
+            // Handle remove from invoice modal (single task)
+            if (removeFromInvoiceModal) {
+                removeFromInvoiceModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const taskId = button.getAttribute('data-task-id');
+                    const taskTitle = button.getAttribute('data-task-title');
+                    
+                    document.getElementById('taskIdInput').value = taskId;
+                    document.getElementById('taskTitle').textContent = taskTitle;
+                });
+            }
+
+            // Initial UI update
+            updateSelectionUI();
+        });
+    </script>
+}
+
+<style>
+    .avatar-sm {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .avatar-title {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+    }
+</style>

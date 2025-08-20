@@ -134,6 +134,16 @@
                         <span>تکمیل شده بدون فاکتور</span>
                     </a>
                 </li>
+                @* Invoiced Tasks - Only for Admin *@
+                @if (User.IsInRole("SystemAdmin"))
+                {
+                    <li class="sidebar-nav-item">
+                        <a class="sidebar-nav-link @(currentController == "Tasks" && currentAction == "InvoicedTasks" ? "active" : "")" asp-controller="Tasks" asp-action="InvoicedTasks">
+                            <i class="bi bi-receipt-cutoff me-2"></i>
+                            <span>تسک‌های فاکتور شده</span>
+                        </a>
+                    </li>
+                }
             </ul>
         </div>
 
@@ -143,10 +153,22 @@
                 <i class="bi bi-receipt me-2"></i>مالی
             </h6>
             <ul class="sidebar-nav">
-                <a class="sidebar-nav-link @(currentController == "Invoices" && currentAction == "Index" ? "active" : "")" asp-controller="Invoices" asp-action="Index">
-                    <i class="bi bi-receipt me-2"></i>
-                    <span>صورتحساب‌ها</span>
-                </a>
+                <li class="sidebar-nav-item">
+                    <a class="sidebar-nav-link @(currentController == "Invoices" && currentAction == "Index" ? "active" : "")" asp-controller="Invoices" asp-action="Index">
+                        <i class="bi bi-receipt me-2"></i>
+                        <span>صورتحساب‌ها</span>
+                    </a>
+                </li>
+                @* Invoice Schedules - Only for Admin *@
+                @if (User.IsInRole("SystemAdmin"))
+                {
+                    <li class="sidebar-nav-item">
+                        <a class="sidebar-nav-link @(currentController == "InvoiceSchedules" ? "active" : "")" asp-controller="InvoiceSchedules" asp-action="Index">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            <span>زمان‌بندی فاکتورها</span>
+                        </a>
+                    </li>
+                }
             </ul>
         </div>
 

@@ -6,6 +6,11 @@
     var notStartedTasks = Model.Where(t => t.Status == TaskStatusEnum.NotStarted).ToList();
     var inProgressTasks = Model.Where(t => t.Status == TaskStatusEnum.InProgress).ToList();
     var completedTasks = Model.Where(t => t.Status == TaskStatusEnum.Completed).ToList();
+    
+    // محاسبه جمع ساعت‌ها برای هر ستون
+    var notStartedHours = notStartedTasks.Sum(t => t.Hours);
+    var inProgressHours = inProgressTasks.Sum(t => t.Hours);
+    var completedHours = completedTasks.Sum(t => t.Hours);
 }
 
 <style>
@@ -59,7 +64,8 @@
     .kanban-container {
         display: flex;
         gap: 16px;
-        min-height: calc(100vh - 200px);
+        height: calc(100vh - 220px);
+        max-height: 800px;
     }
     
     .kanban-column {
@@ -70,6 +76,7 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        height: 100%;
     }
     
     .column-header {
@@ -79,6 +86,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-shrink: 0;
     }
     
     .column-title {
@@ -102,11 +110,48 @@
         text-align: center;
     }
     
+    .column-hours {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 3px 6px;
+        border-radius: 8px;
+        margin-right: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+    
+    .column-hours i {
+        font-size: 10px;
+    }
+    
     .column-body {
         flex: 1;
         padding: 16px;
         overflow-y: auto;
-        min-height: 500px;
+        overflow-x: hidden;
+        max-height: calc(100vh - 300px);
+    }
+    
+    /* Scrollbar styling */
+    .column-body::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .column-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .column-body::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    .column-body::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
     }
     
     .column-icon {
@@ -155,9 +200,29 @@
             </h1>
             <p class="page-subtitle">نمای کلی وضعیت تسک‌ها و مدیریت سریع عملیات</p>
         </div>
-        <button type="button" class="btn-new-task" onclick="createTask()">
-            <i class="bi bi-plus"></i> تسک جدید
-        </button>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- فیلتر انجام‌دهنده -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="performerFilter" style="font-size: 14px; color: #6c757d; white-space: nowrap;">فیلتر انجام‌دهنده:</label>
+                <select id="performerFilter" class="form-select form-select-sm" style="min-width: 200px;" onchange="filterByPerformer()">
+                    <option value="">همه</option>
+                    @{
+                        var allPerformers = Model.Where(t => t.Performer != null)
+                                                .Select(t => t.Performer)
+                                                .DistinctBy(p => p.Id)
+                                                .OrderBy(p => p.FullName)
+                                                .ToList();
+                    }
+                    @foreach (var performer in allPerformers)
+                    {
+                        <option value="@performer.Id">@performer.FullName</option>
+                    }
+                </select>
+            </div>
+            <button type="button" class="btn-new-task" onclick="createTask()">
+                <i class="bi bi-plus"></i> تسک جدید
+            </button>
+        </div>
     </div>
 </div>
 
@@ -171,7 +236,13 @@
                 <i class="bi bi-pause-circle column-icon column-icon-not-started"></i>
                 شروع نشده
             </h3>
-            <span class="column-count">@notStartedTasks.Count</span>
+            <div>
+                <span class="column-hours">
+                    <i class="bi bi-clock"></i>
+                    <span class="hours-value">@(notStartedHours.ToString("0.##"))</span>
+                </span>
+                <span class="column-count">@notStartedTasks.Count</span>
+            </div>
         </div>
         <div class="column-body">
             @foreach (var task in notStartedTasks)
@@ -188,7 +259,13 @@
                 <i class="bi bi-arrow-repeat column-icon column-icon-in-progress"></i>
                 در حال انجام
             </h3>
-            <span class="column-count">@inProgressTasks.Count</span>
+            <div>
+                <span class="column-hours">
+                    <i class="bi bi-clock"></i>
+                    <span class="hours-value">@(inProgressHours.ToString("0.##"))</span>
+                </span>
+                <span class="column-count">@inProgressTasks.Count</span>
+            </div>
         </div>
         <div class="column-body">
             @foreach (var task in inProgressTasks)
@@ -205,7 +282,13 @@
                 <i class="bi bi-check-circle column-icon column-icon-completed"></i>
                 تکمیل شده
             </h3>
-            <span class="column-count">@completedTasks.Count</span>
+            <div>
+                <span class="column-hours">
+                    <i class="bi bi-clock"></i>
+                    <span class="hours-value">@(completedHours.ToString("0.##"))</span>
+                </span>
+                <span class="column-count">@completedTasks.Count</span>
+            </div>
         </div>
         <div class="column-body">
             @foreach (var task in completedTasks)
@@ -293,7 +376,9 @@
                             const modalInstance = bootstrap.Modal.getInstance(modalEl);
                             if (modalInstance) modalInstance.hide();
                             showNotification(json.message || 'انجام شد', 'success');
-                            location.reload();
+                            
+                            // بجای reload کامل، فقط بخش کانبان را بازخوانی کنیم
+                            await refreshKanbanBoard();
                         } else {
                             // Unexpected JSON without success
                             showNotification('پاسخ نامعتبر سرور', 'error');
@@ -326,6 +411,60 @@
             }, 5000);
         }
 
+        // تابع بازخوانی بورد کانبان بدون reload کامل صفحه
+        async function refreshKanbanBoard() {
+            try {
+                const resp = await fetch(window.location.href, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!resp.ok) throw new Error();
+                const html = await resp.text();
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const newKanbanContainer = tempDiv.querySelector('.kanban-container');
+                if (newKanbanContainer) {
+                    const currentKanbanContainer = document.querySelector('.kanban-container');
+                    
+                    // پاک کردن event listeners قدیمی
+                    dragItem = null;
+                    dragOriginStatus = null;
+                    
+                    currentKanbanContainer.replaceWith(newKanbanContainer);
+                    
+                    // دوباره initialize کنیم
+                    initializeKanbanComponents();
+                    initializeDragAndDrop();
+                    
+                    // فیلتر فعلی را دوباره اعمال کنیم
+                    const performerFilter = document.querySelector('#performerFilter');
+                    if (performerFilter && performerFilter.value) {
+                        filterByPerformer(performerFilter.value);
+                    }
+                }
+            } catch {
+                // در صورت خطا، از reload استفاده کنیم
+                location.reload();
+            }
+        }
+
+        // تابع مقداردهی اولیه اجزای کانبان بعد از refresh
+        function initializeKanbanComponents() {
+            // دوباره تعریف متغیرهای کانبان
+            window.kanbanColumns = document.querySelectorAll('.kanban-column');
+            
+            // پاک کردن تمام attribute های قبلی برای اینکه دوباره تنظیم شوند
+            document.querySelectorAll('.task-card').forEach(card => {
+                card.removeAttribute('data-drag-initialized');
+                card.removeAttribute('data-double-click-initialized');
+            });
+            document.querySelectorAll('.column-body').forEach(body => {
+                body.removeAttribute('data-drop-initialized');
+            });
+            
+            // دوباره محاسبه counters
+            refreshCounters();
+        }
+
         // Clear modal content on hide (Bootstrap events without jQuery)
         document.addEventListener('hidden.bs.modal', ev => {
             if (ev.target && (ev.target.id === 'createTaskModal' || ev.target.id === 'editTaskModal')) {
@@ -342,15 +481,33 @@
         let pendingRequests = new Set(); // Track pending requests
 
         function refreshCounters() {
-            kanbanColumns.forEach(col => {
+            const kanbanCols = document.querySelectorAll('.kanban-column');
+            kanbanCols.forEach(col => {
                 const body = col.querySelector('.column-body');
-                const count = body ? body.querySelectorAll('.task-card').length : 0;
+                const visibleCards = body ? body.querySelectorAll('.task-card:not([style*="display: none"])') : [];
+                const count = visibleCards.length;
                 const badge = col.querySelector('.column-count');
                 if (badge) badge.textContent = count;
+                
+                // محاسبه جمع ساعت‌های تسک‌های نمایش داده شده
+                let totalHours = 0;
+                visibleCards.forEach(card => {
+                    const hours = parseFloat(card.getAttribute('data-hours') || '0');
+                    totalHours += hours;
+                });
+                
+                // به‌روزرسانی نمایش ساعت‌ها
+                const hoursValueElement = col.querySelector('.column-hours .hours-value');
+                if (hoursValueElement) {
+                    hoursValueElement.textContent = totalHours.toFixed(2);
+                }
             });
         }
 
         function initDragAndDrop() {
+            // بازخوانی متغیر kanbanColumns برای عناصر جدید
+            const currentKanbanColumns = document.querySelectorAll('.kanban-column');
+            
             // Remove existing event listeners to prevent duplicates
             document.querySelectorAll('.task-card').forEach(card => {
                 if (card.dataset.dragInitialized === 'true') return;
@@ -380,7 +537,7 @@
                 });
             });
 
-            kanbanColumns.forEach(column => {
+            currentKanbanColumns.forEach(column => {
                 const body = column.querySelector('.column-body');
                 if (!body || body.dataset.dropInitialized === 'true') return;
                 body.dataset.dropInitialized = 'true';
@@ -478,6 +635,32 @@
         // Re-init drag after page load (initial cards rendered server-side)
         initDragAndDrop();
         refreshCounters();
+
+        // تابع initialize برای drag and drop
+        function initializeDragAndDrop() {
+            initDragAndDrop();
+        }
+
+        // تابع فیلتر بر اساس انجام‌دهنده
+        function filterByPerformer() {
+            const selectedPerformerId = document.getElementById('performerFilter').value;
+            const allTaskCards = document.querySelectorAll('.task-card');
+            
+            allTaskCards.forEach(card => {
+                if (selectedPerformerId === '') {
+                    // نمایش همه تسک‌ها
+                    card.style.display = 'block';
+                } else {
+                    // بررسی انجام‌دهنده تسک
+                    const cardPerformerId = card.getAttribute('data-performer-id');
+                    const shouldShow = cardPerformerId === selectedPerformerId;
+                    card.style.display = shouldShow ? 'block' : 'none';
+                }
+            });
+            
+            // بروزرسانی شمارنده‌ها
+            refreshCounters();
+        }
 
         // Mutation observer to auto-bind new cards (after create without full reload in future enhancements)
         const observer = new MutationObserver(muts => {
