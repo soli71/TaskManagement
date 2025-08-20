@@ -37,7 +37,9 @@ namespace TaskManagementMvc.Controllers
         {
             var currentUser = await _userManager.GetUserAsync(User);
             
-            IQueryable<ApplicationUser> usersQuery = _userManager.Users.Where(u => u.IsActive).Include(u => u.Company);
+            IQueryable<ApplicationUser> usersQuery = _userManager.Users
+                .Where(u => u.IsActive)
+                .Include(u => u.Company);
             
             // If not admin, show only company users
             if (!User.IsInRole(Roles.SystemAdmin))
@@ -48,23 +50,35 @@ namespace TaskManagementMvc.Controllers
                 }
                 usersQuery = usersQuery.Where(u => u.CompanyId == currentUser.CompanyId);
             }
-
-            var users = await usersQuery
-                .Select(u => new UserListViewModel
-                {
-                    Id = u.Id,
-                    FullName = u.FullName,
-                    UserName = u.UserName,
-                    Email = u.Email,
-                    PhoneNumber = u.PhoneNumber,
-                    CompanyName = u.Company != null ? u.Company.Name : null,
-                    IsActive = u.IsActive,
-                    Roles = _userManager.GetRolesAsync(u).Result.ToList()
-                })
+            // Load users first
+            var userEntities = await usersQuery
                 .OrderBy(u => u.FullName)
                 .ToListAsync();
 
-            return View(users);
+            // Batch load active roles for these users (avoids N+1 and invalid translation)
+            var userIds = userEntities.Select(u => u.Id).ToList();
+            var userRoleLinks = await _context.UserRoles
+                .Where(ur => ur.IsActive && userIds.Contains(ur.UserId))
+                .Include(ur => ur.Role)
+                .ToListAsync();
+
+            var rolesByUser = userRoleLinks
+                .GroupBy(ur => ur.UserId)
+                .ToDictionary(g => g.Key, g => g.Select(r => r.Role.Name ?? string.Empty).Where(n => !string.IsNullOrEmpty(n)).Distinct().OrderBy(n => n).ToList());
+
+            var list = userEntities.Select(u => new UserListViewModel
+            {
+                Id = u.Id,
+                FullName = u.FullName,
+                UserName = u.UserName ?? string.Empty,
+                Email = u.Email ?? string.Empty,
+                PhoneNumber = u.PhoneNumber,
+                CompanyName = u.Company?.Name,
+                IsActive = u.IsActive,
+                Roles = rolesByUser.TryGetValue(u.Id, out var roles) ? roles : new List<string>()
+            }).ToList();
+
+            return View(list);
         }
 
         [Authorize(Policy = Permissions.CreateUsers)]
