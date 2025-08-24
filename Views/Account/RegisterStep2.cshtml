@@ -1,0 +1,38 @@
+@model TaskManagementMvc.Controllers.RegisterStep2ViewModel
+@{
+    ViewData["Title"] = "ثبت‌نام - مرحله ۲";
+}
+<div class="container auth-wrapper">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card mt-4">
+                <div class="card-header">مرحله ۲: اطلاعات شرکت</div>
+                <div class="card-body">
+                    <form asp-action="RegisterStep2" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+                        <div class="mb-3">
+                            <label asp-for="CompanyName" class="form-label"></label>
+                            <input asp-for="CompanyName" class="form-control" />
+                            <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Phone" class="form-label"></label>
+                            <input asp-for="Phone" class="form-control" />
+                            <span asp-validation-for="Phone" class="text-danger small"></span>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">تکمیل ثبت‌نام</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts{<partial name="_ValidationScriptsPartial"/>}

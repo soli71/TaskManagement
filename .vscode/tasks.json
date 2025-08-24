@@ -54,6 +54,13 @@
 				"$msCompile"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Run .NET project",
+			"type": "shell",
+			"command": "dotnet run --project TaskManagementMvc.csproj",
+			"isBackground": true,
+			"group": "build"
 		}
 	]
 }

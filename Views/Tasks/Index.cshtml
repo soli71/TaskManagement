@@ -192,6 +192,7 @@
 </style>
 
 <div class="page-header">
+    @Html.AntiForgeryToken()
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h1 class="page-title">
@@ -355,17 +356,17 @@
             }
         }
 
-        function setupTaskForm(formSelector, modalSelector) {
+    function setupTaskForm(formSelector, modalSelector) {
             const form = document.querySelector(formSelector);
             if (!form) return;
             form.addEventListener('submit', async e => {
                 e.preventDefault();
                 const formData = new FormData(form);
-                const url = form.getAttribute('action') || '@Url.Action("Create")';
+        const url = form.getAttribute('action') || '@Url.Action("Create")';
                 // Anti-forgery token if present
                 const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-                const headers = { 'X-Requested-With': 'XMLHttpRequest' };
-                if (tokenInput) headers['RequestVerificationToken'] = tokenInput.value;
+        const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+        if (tokenInput) headers['RequestVerificationToken'] = tokenInput.value;
                 try {
                     const resp = await fetch(url, { method: 'POST', body: formData, headers });
                     const contentType = resp.headers.get('content-type') || '';

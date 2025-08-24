@@ -1,3 +1,27 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@4.0.0/dist/jquery.validate.unobtrusive.min.js"></script>
+<script>
+// Persian messages for jQuery Validation
+if (window.jQuery && jQuery.validator) {
+	jQuery.extend(jQuery.validator.messages, {
+		required: "این فیلد الزامی است.",
+		remote: "لطفاً این فیلد را تصحیح کنید.",
+		email: "لطفاً یک ایمیل معتبر وارد کنید.",
+		url: "لطفاً یک آدرس وب معتبر وارد کنید.",
+		date: "لطفاً یک تاریخ معتبر وارد کنید.",
+		dateISO: "لطفاً یک تاریخ معتبر (ISO) وارد کنید.",
+		number: "لطفاً یک عدد معتبر وارد کنید.",
+		digits: "لطفاً فقط رقم وارد کنید.",
+		creditcard: "لطفاً یک شماره کارت اعتباری معتبر وارد کنید.",
+		equalTo: "لطفاً مقدار یکسان وارد کنید.",
+		extension: "لطفاً مقداری با پسوند معتبر وارد کنید.",
+		maxlength: jQuery.validator.format("لطفاً بیش از {0} کاراکتر وارد نکنید."),
+		minlength: jQuery.validator.format("لطفاً حداقل {0} کاراکتر وارد کنید."),
+		rangelength: jQuery.validator.format("لطفاً مقداری بین {0} و {1} کاراکتر وارد کنید."),
+		range: jQuery.validator.format("لطفاً مقداری بین {0} و {1} وارد کنید."),
+		max: jQuery.validator.format("لطفاً مقداری کمتر یا مساوی {0} وارد کنید."),
+		min: jQuery.validator.format("لطفاً مقداری بیشتر یا مساوی {0} وارد کنید.")
+	});
+}
+</script>

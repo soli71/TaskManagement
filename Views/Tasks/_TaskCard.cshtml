@@ -52,40 +52,9 @@
     position: relative;
 }
 
-.task-menu-btn {
-    background: none;
-    border: none;
-    color: #6c757d;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 6px 8px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+/* Removed three-dots menu button styles */
 
-.task-menu-btn:hover {
-    background: rgba(108, 117, 125, 0.1);
-    color: #495057;
-    transform: scale(1.1);
-}
-
-.task-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    right: 0;
-    background: white;
-    border: 1px solid #e0e6ed;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.08);
-    z-index: 1000;
-    min-width: 160px;
-    display: none;
-    overflow: hidden;
-    animation: dropdownSlide 0.15s ease-out;
-}
+/* Removed dropdown styles */
 
 @@keyframes dropdownSlide {
     from {
@@ -288,25 +257,10 @@
     
     <div class="task-header">
         <span class="task-id">#@Model.Id</span>
-        <div class="task-menu">
-            <button class="task-menu-btn" onclick="toggleDropdown(this)" title="منو">
-                <i class="bi bi-three-dots-vertical"></i>
-            </button>
-            <div class="task-dropdown">
-                <button class="dropdown-item" onclick="editTask(@Model.Id)">
-                    <i class="bi bi-pencil"></i>
-                    <span>ویرایش تسک</span>
-                </button>
-                <button class="dropdown-item" onclick="viewTask(@Model.Id)">
-                    <i class="bi bi-eye"></i>
-                    <span>مشاهده جزئیات</span>
-                </button>
-                <div style="height: 1px; background: #e5e7eb; margin: 4px 12px;"></div>
-                <button class="dropdown-item text-danger" onclick="deleteTask(@Model.Id)">
-                    <i class="bi bi-trash"></i>
-                    <span>حذف تسک</span>
-                </button>
-            </div>
+        <div class="d-flex align-items-center gap-1">
+            <button class="btn btn-sm btn-outline-secondary" title="مشاهده" onclick="viewTask(@Model.Id)"><i class="bi bi-eye"></i></button>
+            <button class="btn btn-sm btn-outline-primary" title="ویرایش" onclick="editTask(@Model.Id)"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-sm btn-outline-danger" title="حذف" onclick="deleteTask(@Model.Id)"><i class="bi bi-trash"></i></button>
         </div>
     </div>
     
@@ -350,56 +304,6 @@
 </div>
 
 <script>
-function toggleDropdown(button) {
-    const dropdown = button.nextElementSibling;
-    
-    // Close all other dropdowns
-    document.querySelectorAll('.task-dropdown.show').forEach(d => {
-        if (d !== dropdown) d.classList.remove('show');
-    });
-    
-    // Toggle current dropdown
-    const isShowing = dropdown.classList.contains('show');
-    if (isShowing) {
-        dropdown.classList.remove('show');
-    } else {
-        dropdown.classList.add('show');
-        
-        // Position dropdown to ensure it's visible
-        const rect = dropdown.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        if (rect.right > viewportWidth) {
-            dropdown.style.right = '0';
-            dropdown.style.left = 'auto';
-        }
-        
-        if (rect.bottom > viewportHeight) {
-            dropdown.style.top = 'auto';
-            dropdown.style.bottom = '100%';
-        }
-    }
-}
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.task-menu')) {
-        document.querySelectorAll('.task-dropdown.show').forEach(d => {
-            d.classList.remove('show');
-        });
-    }
-});
-
-// Close dropdown when pressing Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.task-dropdown.show').forEach(d => {
-            d.classList.remove('show');
-        });
-    }
-});
-
 async function deleteTask(id) {
     if (!confirm('آیا از حذف این تسک اطمینان دارید؟')) return;
     
@@ -418,14 +322,28 @@ async function deleteTask(id) {
         });
         
         if (response.ok) {
-            const card = document.querySelector(`[data-task-id="${id}"]`);
-            if (card) {
-                card.style.transition = 'all 0.3s ease';
-                card.style.transform = 'scale(0)';
-                card.style.opacity = '0';
-                setTimeout(() => card.remove(), 300);
+            let ok = true;
+            try {
+                const json = await response.json();
+                ok = json?.success === true;
+            } catch {}
+
+            if (ok) {
+                const card = document.querySelector(`[data-task-id="${id}"]`);
+                if (card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.transform = 'scale(0)';
+                    card.style.opacity = '0';
+                    setTimeout(() => card.remove(), 300);
+                }
+                showNotification('تسک حذف شد', 'success');
+                // Refresh board counters and hours after DOM change
+                if (typeof refreshKanbanBoard === 'function') {
+                    await refreshKanbanBoard();
+                }
+            } else {
+                throw new Error('Delete failed');
             }
-            showNotification('تسک حذف شد', 'success');
         } else {
             throw new Error('Failed to delete');
         }

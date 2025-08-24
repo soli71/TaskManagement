@@ -514,7 +514,8 @@ namespace TaskManagementMvc.Controllers
             // Check if this is an AJAX request
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return PartialView(vm);
+                // Return the modal partial for in-place editing
+                return PartialView("_EditTaskModal", vm);
             }
 
             return View(vm);
@@ -805,11 +806,11 @@ namespace TaskManagementMvc.Controllers
             return View(task);
         }
 
-        // POST: Tasks/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        [Authorize(Policy = "Tasks.Delete")]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+    // POST: Tasks/Delete/5
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    [Authorize(Policy = Permissions.DeleteTasks)]
+    public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var user = await _userManager.GetUserAsync(User);
             IQueryable<TaskItem> taskQuery;
@@ -915,6 +916,12 @@ namespace TaskManagementMvc.Controllers
             {
                 // Log notification error but don't fail the main operation
                 // _logger.LogError(notificationEx, "Failed to send task deletion notifications");
+            }
+
+            // For AJAX request, return JSON to avoid redirect handling
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true });
             }
 
             return RedirectToAction(nameof(Index));
