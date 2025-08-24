@@ -92,7 +92,7 @@
                     return;
                 }
                 
-                $.post('@Url.Action("GrantAccess", "Projects", new { projectId = project?.Id })', {
+                $.post('@Url.Action("GrantAccessAjax", "Projects", new { projectId = project?.Id })', {
                     projectId: @project?.Id,
                     userId: userId,
                     notes: notes,
@@ -114,7 +114,7 @@
         
         function revokeAccess(projectId, userId) {
             if (confirm('آیا از لغو دسترسی این کاربر مطمئن هستید؟')) {
-                $.post('@Url.Action("RevokeAccess", "Projects")', {
+                $.post('@Url.Action("RevokeAccessAjax", "Projects")', {
                     projectId: projectId,
                     userId: userId,
                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()

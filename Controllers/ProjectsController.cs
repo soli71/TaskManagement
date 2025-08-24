@@ -686,10 +686,10 @@ namespace TaskManagementMvc.Controllers
             return View();
         }
 
-        // POST: Projects/GrantAccess/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GrantAccess(int projectId, int userId, string? notes)
+    // POST: Projects/GrantAccessAjax (legacy AJAX endpoint used by Access.cshtml)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GrantAccessAjax(int projectId, int userId, string? notes)
         {
             try
             {
@@ -829,14 +829,14 @@ namespace TaskManagementMvc.Controllers
                 }
                 catch { /* Ignore notification errors */ }
                 
-                return Json(new { success = false, message = $"خطا در اعطای دسترسی: {ex.Message}" });
+        return Json(new { success = false, message = $"خطا در اعطای دسترسی: {ex.Message}" });
             }
         }
 
-        // POST: Projects/RevokeAccess/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RevokeAccess(int projectId, int userId)
+    // POST: Projects/RevokeAccessAjax (legacy AJAX endpoint used by Access.cshtml)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RevokeAccessAjax(int projectId, int userId)
         {
             var user = await _userManager.GetUserAsync(User);
             var project = await _context.Projects

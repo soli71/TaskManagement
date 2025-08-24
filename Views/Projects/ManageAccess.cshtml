@@ -267,32 +267,43 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            // Handle user selection
-            $('.user-select-card').click(function() {
-                const checkbox = $(this).find('.user-checkbox');
-                checkbox.prop('checked', !checkbox.prop('checked'));
-                updateSelection();
-            });
-            
-            $('.user-checkbox').change(function() {
-                updateSelection();
-            });
-            
+        document.addEventListener('DOMContentLoaded', function () {
+            const cards = Array.from(document.querySelectorAll('.user-select-card'));
+            const checkboxes = Array.from(document.querySelectorAll('.user-checkbox'));
+            const grantBtn = document.getElementById('grant-access-btn');
+
             function updateSelection() {
-                const checkedCount = $('.user-checkbox:checked').length;
-                $('#grant-access-btn').prop('disabled', checkedCount === 0);
-                
-                $('.user-select-card').each(function() {
-                    const checkbox = $(this).find('.user-checkbox');
-                    if (checkbox.prop('checked')) {
-                        $(this).addClass('selected');
+                const checked = checkboxes.filter(cb => cb.checked);
+                if (grantBtn) grantBtn.disabled = checked.length === 0;
+
+                cards.forEach(card => {
+                    const cb = card.querySelector('.user-checkbox');
+                    if (cb && cb.checked) {
+                        card.classList.add('selected');
                     } else {
-                        $(this).removeClass('selected');
+                        card.classList.remove('selected');
                     }
                 });
             }
-            
+
+            // Toggle checkbox when clicking on the card (but ignore direct clicks on inputs to respect default behavior)
+            cards.forEach(card => {
+                card.addEventListener('click', function (e) {
+                    const isInput = e.target.closest('input, label, button, a');
+                    if (isInput) return;
+                    const cb = card.querySelector('.user-checkbox');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        updateSelection();
+                    }
+                });
+            });
+
+            // Track checkbox changes
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelection);
+            });
+
             // Initial state
             updateSelection();
         });
